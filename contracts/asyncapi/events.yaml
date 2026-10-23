@@ -1,0 +1,99 @@
+asyncapi: 3.1.0
+info:
+  title: Connected Games - Eventi Di Gioco
+  version: 0.1.0
+  description: Events published by edge (hub or simulator) versus the Cloud.
+
+servers:
+  hub:
+    host: localhost:1883
+    protocol: mqtt
+    description: Broker Mosquitto on Local
+  cloud:
+    host: localhost:8883
+    protocol: secure-mqtt
+    description: Broker Mosquitto on Cloud (TLS, certification per Hub)
+
+channels:
+  matchEvents:
+    address: 'venues/{venueId}/games/{gameId}/matches/{matchId}/events'
+    description: Events of a match, in sequence order
+    parameters:
+      venueId:
+        description: Locale
+      gameId:
+        description: Table inside local
+      matchId:
+        description: Match
+    messages:
+      matchStarted:
+        $ref: '#/components/messages/MatchStarted'
+      goalScored:
+        $ref: '#/components/messages/GoalScored'
+      matchEnded:
+        $ref: '#/components/messages/MatchEnded'
+  hubAck:
+    address: 'venues/{venueId}/hub/ack'
+    description: Cloud acknowledges the events received from the hub
+    parameters:
+      venueId:
+        description: Locale
+    messages:
+      eventsAcknowledged:
+        $ref: '#/components/messages/EventsAcknowledged'
+  
+
+
+operations:
+  sendMatchEvent:
+    action: send
+    summary: Edge publishes an match event
+    channel:
+      $ref: '#/channels/matchEvents'
+    messages:
+      - $ref: '#/channels/matchEvents/messages/goalScored'
+      - $ref: '#/channels/matchEvents/messages/matchStarted'
+      - $ref: '#/channels/matchEvents/messages/matchEnded'
+    bindings:
+      mqtt:
+        qos: 1
+        retain: false
+  receiveAck:
+    action: receive
+    summary: Hub receives ack and updates outbox
+    channel:
+      $ref: '#/channels/hubAck'
+    messages:
+      - $ref: '#/channels/hubAck/messages/eventsAcknowledged'
+    bindings:
+      mqtt:
+        qos: 1
+        retain: false
+
+components:
+  messages:
+    MatchStarted:
+      name: MatchStarted
+      title: Match Started
+      contentType: application/json
+      payload:
+        $ref: '../schemas/match-started.schema.json'
+    GoalScored:
+      name: GoalScored
+      title: Goal Scored
+      contentType: application/json
+      payload:
+        $ref: '../schemas/goal-scored.schema.json'
+    MatchEnded:
+      name: MatchEnded
+      title: Match Ended
+      contentType: application/json
+      payload:
+        $ref: '../schemas/match-ended.schema.json'
+    EventsAcknowledged:
+      name: EventsAcknowledged
+      title: Eventi confermati
+      contentType: application/json
+      payload:
+        $ref: '../schemas/events-acknowledged.schema.json'
+

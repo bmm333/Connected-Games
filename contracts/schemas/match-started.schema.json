@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MatchStarted",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "MatchStarted" },
+        "payload": {
+          "type": "object",
+          "required": ["mode", "pointsToWin", "sides"],
+          "properties": {
+            "mode": { "enum": ["INDIVIDUAL", "SQUADS"] },
+            "pointsToWin": { "type": "integer", "minimum": 1 },
+            "sides": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["side"],
+                "properties": {
+                  "side": { "enum": ["ROSSI", "BLU"] },
+                  "participantId": { "type": "string", "description": "Squad or player: missing if the match started offline without login" },
+                  "displayName": { "type": "string", "description": "Name of the team or nickname of the player" }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}

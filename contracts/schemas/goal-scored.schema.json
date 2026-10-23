@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GoalScored",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "GoalScored" },
+        "payload": {
+          "type": "object",
+          "required": ["side"],
+          "properties": { "side": { "enum": ["ROSSI", "BLU"] } },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}
