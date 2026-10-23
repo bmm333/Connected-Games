@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.connectedgames.tournament.TournamentApplicationTests" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-22T19:20:09.975Z" hostname="m3b-System-Product-Name" time="5.098">
+  <properties/>
+  <testcase name="contextLoads()" classname="com.connectedgames.tournament.TournamentApplicationTests" time="0.303"/>
+  <system-out><![CDATA[21:20:10.063 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.connectedgames.tournament.TournamentApplicationTests]: TournamentApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:20:10.128 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.connectedgames.tournament.TournamentApplication for test class com.connectedgames.tournament.TournamentApplicationTests
+21:20:10.170 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.connectedgames.tournament.TournamentApplicationTests]: TournamentApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:20:10.173 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.connectedgames.tournament.TournamentApplication for test class com.connectedgames.tournament.TournamentApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-22T21:20:10.355+02:00  INFO 335576 --- [tournament] [    Test worker] c.c.t.TournamentApplicationTests         : Starting TournamentApplicationTests using Java 25.0.4.1 with PID 335576 (started by m3b in /home/m3b/Connected-Games/services/tournament)
+2026-10-22T21:20:10.356+02:00  INFO 335576 --- [tournament] [    Test worker] c.c.t.TournamentApplicationTests         : No active profile set, falling back to 1 default profile: "default"
+2026-10-22T21:20:10.854+02:00  INFO 335576 --- [tournament] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-22T21:20:10.867+02:00  INFO 335576 --- [tournament] [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 6 ms. Found 0 JPA repository interfaces.
+2026-10-22T21:20:10.970+02:00  INFO 335576 --- [tournament] [    Test worker] faultConfiguringBeanFactoryPostProcessor : No bean named 'errorChannel' has been explicitly defined. Therefore, a default PublishSubscribeChannel will be created.
+2026-10-22T21:20:10.974+02:00  INFO 335576 --- [tournament] [    Test worker] faultConfiguringBeanFactoryPostProcessor : No bean named 'integrationHeaderChannelRegistry' has been explicitly defined. Therefore, a default DefaultHeaderChannelRegistry will be created.
+2026-10-22T21:20:11.200+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.images.PullPolicy     : Image pull policy will be performed by: DefaultPullPolicy()
+2026-10-22T21:20:11.201+02:00  INFO 335576 --- [tournament] [    Test worker] o.t.utility.ImageNameSubstitutor         : Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+2026-10-22T21:20:11.211+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.DockerClientFactory   : Testcontainers version: 2.0.5
+2026-10-22T21:20:11.295+02:00  INFO 335576 --- [tournament] [    Test worker] o.t.d.DockerClientProviderStrategy       : Loaded org.testcontainers.dockerclient.UnixSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+2026-10-22T21:20:11.527+02:00  INFO 335576 --- [tournament] [    Test worker] o.t.d.DockerClientProviderStrategy       : Found Docker environment with local Unix socket (unix:///var/run/docker.sock)
+2026-10-22T21:20:11.528+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.DockerClientFactory   : Docker host IP address is localhost
+2026-10-22T21:20:11.538+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.DockerClientFactory   : Connected to docker: 
+  Server Version: 29.1.3
+  API Version: 1.52
+  Operating System: Ubuntu 22.04.5 LTS
+  Total Memory: 48053 MB
+2026-10-22T21:20:11.551+02:00  INFO 335576 --- [tournament] [    Test worker] tc.testcontainers/ryuk:0.14.0            : Creating container for image: testcontainers/ryuk:0.14.0
+2026-10-22T21:20:11.554+02:00  INFO 335576 --- [tournament] [    Test worker] o.t.utility.RegistryAuthLocator          : Failure when attempting to lookup auth config. Please ignore if you don't have images in an authenticated registry. Details: (dockerImageName: testcontainers/ryuk:0.14.0, configFile: /home/m3b/.docker/config.json, configEnv: DOCKER_AUTH_CONFIG). Falling back to docker-java default behaviour. Exception message: Status 404: No config supplied. Checked in order: /home/m3b/.docker/config.json (file not found), DOCKER_AUTH_CONFIG (not set)
+2026-10-22T21:20:11.668+02:00  INFO 335576 --- [tournament] [    Test worker] tc.testcontainers/ryuk:0.14.0            : Container testcontainers/ryuk:0.14.0 is starting: 412b4cb379ec25f4aac67608d9070f4adeef800102a65adbe2f870ed073f12a1
+2026-10-22T21:20:11.921+02:00  INFO 335576 --- [tournament] [    Test worker] tc.testcontainers/ryuk:0.14.0            : Container testcontainers/ryuk:0.14.0 started in PT0.369949671S
+2026-10-22T21:20:11.925+02:00  INFO 335576 --- [tournament] [    Test worker] o.t.utility.RyukResourceReaper           : Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+2026-10-22T21:20:11.925+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.DockerClientFactory   : Checking the system...
+2026-10-22T21:20:11.926+02:00  INFO 335576 --- [tournament] [    Test worker] org.testcontainers.DockerClientFactory   : ✔︎ Docker server version should be at least 1.6.0
+2026-10-22T21:20:11.926+02:00  INFO 335576 --- [tournament] [    Test worker] tc.postgres:latest                       : Creating container for image: postgres:latest
+2026-10-22T21:20:11.980+02:00  INFO 335576 --- [tournament] [    Test worker] tc.postgres:latest                       : Container postgres:latest is starting: 61e52dbf5c04e2c7da458d8e120e8a5e5d5b2079e49be371afb28bed3fd1b902
+2026-10-22T21:20:13.052+02:00  INFO 335576 --- [tournament] [    Test worker] tc.postgres:latest                       : Container postgres:latest started in PT1.126106404S
+2026-10-22T21:20:13.053+02:00  INFO 335576 --- [tournament] [    Test worker] tc.postgres:latest                       : Container is started (JDBC URL: jdbc:postgresql://localhost:32777/test?loggerLevel=OFF)
+2026-10-22T21:20:13.269+02:00  INFO 335576 --- [tournament] [    Test worker] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:32777/test?loggerLevel=OFF (PostgreSQL 18.6)
+2026-10-22T21:20:13.291+02:00  INFO 335576 --- [tournament] [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-10-22T21:20:13.292+02:00  INFO 335576 --- [tournament] [    Test worker] o.f.core.internal.command.DbValidate     : Successfully validated 0 migrations (execution time 00:00.004s)
+2026-10-22T21:20:13.293+02:00  WARN 335576 --- [tournament] [    Test worker] o.f.core.internal.command.DbValidate     : No migrations found. Are your locations set up correctly?
+2026-10-22T21:20:13.300+02:00  INFO 335576 --- [tournament] [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-10-22T21:20:13.329+02:00  INFO 335576 --- [tournament] [    Test worker] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-10-22T21:20:13.331+02:00  INFO 335576 --- [tournament] [    Test worker] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-10-22T21:20:13.372+02:00  INFO 335576 --- [tournament] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-22T21:20:13.386+02:00  INFO 335576 --- [tournament] [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@1693d505
+2026-10-22T21:20:13.387+02:00  INFO 335576 --- [tournament] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-22T21:20:13.405+02:00  INFO 335576 --- [tournament] [    Test worker] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-22T21:20:13.429+02:00  INFO 335576 --- [tournament] [    Test worker] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.5.Final
+2026-10-22T21:20:13.632+02:00  INFO 335576 --- [tournament] [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-22T21:20:13.678+02:00  INFO 335576 --- [tournament] [    Test worker] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:32777/test?loggerLevel=OFF]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.6
+	Default catalog/schema: test/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-22T21:20:13.874+02:00  INFO 335576 --- [tournament] [    Test worker] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-22T21:20:13.879+02:00  INFO 335576 --- [tournament] [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-22T21:20:13.986+02:00  WARN 335576 --- [tournament] [    Test worker] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-10-22T21:20:14.557+02:00  INFO 335576 --- [tournament] [    Test worker] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2026-10-22T21:20:14.706+02:00  INFO 335576 --- [tournament] [    Test worker] o.s.i.endpoint.EventDrivenConsumer       : Adding {logging-channel-adapter:_org.springframework.integration.errorLogger} as a subscriber to the 'errorChannel' channel
+2026-10-22T21:20:14.707+02:00  INFO 335576 --- [tournament] [    Test worker] o.s.i.channel.PublishSubscribeChannel    : Channel 'tournament.errorChannel' has 1 subscriber(s).
+2026-10-22T21:20:14.707+02:00  INFO 335576 --- [tournament] [    Test worker] o.s.i.endpoint.EventDrivenConsumer       : started bean '_org.springframework.integration.errorLogger'
+2026-10-22T21:20:14.714+02:00  INFO 335576 --- [tournament] [    Test worker] c.c.t.TournamentApplicationTests         : Started TournamentApplicationTests in 4.507 seconds (process running for 5.186)
+2026-10-22T21:20:14.763+02:00  WARN 335576 --- [tournament] [    Test worker] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+2026-10-22T21:20:14.763+02:00  WARN 335576 --- [tournament] [    Test worker] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+]]></system-out>
+  <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/home/m3b/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.18.11/82212e5b3633e7a65fca8bec525762cfb6c9bae4/byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>
