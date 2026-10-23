@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MatchEnded",
+  "allOf": [
+    { "$ref": "envelope.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "MatchEnded" },
+        "payload": {
+          "type": "object",
+          "required": ["reason", "finalScore"],
+          "properties": {
+            "reason": { "enum": ["SCORE_REACHED", "TIME_EXPIRED", "CANCELLED"] },
+            "finalScore": {
+              "type": "array",
+              "minItems": 2,
+              "items": {
+                "type": "object",
+                "required": ["side", "score"],
+                "properties": {
+                  "side": { "enum": ["ROSSI", "BLU"] },
+                  "score": { "type": "integer", "minimum": 0 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "winnerSide": { "enum": ["ROSSI", "BLU"], "description": "Assente se la partita è annullata o in pareggio" }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ]
+}
