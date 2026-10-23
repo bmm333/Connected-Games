@@ -32,6 +32,17 @@ channels:
         $ref: '#/components/messages/GoalScored'
       matchEnded:
         $ref: '#/components/messages/MatchEnded'
+  hubAck:
+    address: 'venues/{venueId}/hub/ack'
+    description: Cloud acknowledges the events received from the hub
+    parameters:
+      venueId:
+        description: Locale
+    messages:
+      eventsAcknowledged:
+        $ref: '#/components/messages/EventsAcknowledged'
+  
+
 
 operations:
   sendMatchEvent:
@@ -43,6 +54,17 @@ operations:
       - $ref: '#/channels/matchEvents/messages/goalScored'
       - $ref: '#/channels/matchEvents/messages/matchStarted'
       - $ref: '#/channels/matchEvents/messages/matchEnded'
+    bindings:
+      mqtt:
+        qos: 1
+        retain: false
+  receiveAck:
+    action: receive
+    summary: Hub receives ack and updates outbox
+    channel:
+      $ref: '#/channels/hubAck'
+    messages:
+      - $ref: '#/channels/hubAck/messages/eventsAcknowledged'
     bindings:
       mqtt:
         qos: 1
@@ -68,3 +90,10 @@ components:
       contentType: application/json
       payload:
         $ref: '../schemas/match-ended.schema.json'
+    EventsAcknowledged:
+      name: EventsAcknowledged
+      title: Eventi confermati
+      contentType: application/json
+      payload:
+        $ref: '../schemas/events-acknowledged.schema.json'
+
