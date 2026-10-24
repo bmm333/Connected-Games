@@ -1,11 +1,18 @@
 import '@fontsource-variable/inter'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { queryClient, idbPersister } from '@shared/api'
 import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: idbPersister }}
+    >
+      <App />
+    </PersistQueryClientProvider>
   </StrictMode>,
 )

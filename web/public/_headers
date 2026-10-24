@@ -1,0 +1,25 @@
+# Immutably cached static assets (hashes in filename)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons & PWA static images (cache for 1 week)
+/pwa-*.png
+  Cache-Control: public, max-age=604800
+/maskable-icon-*.png
+  Cache-Control: public, max-age=604800
+/apple-touch-icon-*.png
+  Cache-Control: public, max-age=604800
+/favicon.*
+  Cache-Control: public, max-age=86400
+
+# Critical PWA files: must always revalidate to pick up application updates immediately
+/manifest.webmanifest
+  Cache-Control: public, max-age=0, must-revalidate
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+/registerSW.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+# HTML entry points: never store stale shell
+/*
+  Cache-Control: public, max-age=0, must-revalidate
