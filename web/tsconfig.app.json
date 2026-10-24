@@ -4,7 +4,7 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
 
@@ -20,7 +20,74 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Aliases — Clean Architecture layers */
+    "paths": {
+      /* ── Modules ── */
+      "@catalog/domain":         ["./src/modules/catalog/domain"],
+      "@catalog/domain/*":       ["./src/modules/catalog/domain/*"],
+      "@catalog/application":    ["./src/modules/catalog/application"],
+      "@catalog/application/*":  ["./src/modules/catalog/application/*"],
+      "@catalog/adapters":       ["./src/modules/catalog/adapters"],
+      "@catalog/adapters/*":     ["./src/modules/catalog/adapters/*"],
+      "@catalog/ui":             ["./src/modules/catalog/ui"],
+      "@catalog/ui/*":           ["./src/modules/catalog/ui/*"],
+
+      "@identity/domain":        ["./src/modules/identity/domain"],
+      "@identity/domain/*":      ["./src/modules/identity/domain/*"],
+      "@identity/application":   ["./src/modules/identity/application"],
+      "@identity/application/*": ["./src/modules/identity/application/*"],
+      "@identity/adapters":      ["./src/modules/identity/adapters"],
+      "@identity/adapters/*":    ["./src/modules/identity/adapters/*"],
+      "@identity/ui":            ["./src/modules/identity/ui"],
+      "@identity/ui/*":          ["./src/modules/identity/ui/*"],
+
+      "@match/domain":           ["./src/modules/match/domain"],
+      "@match/domain/*":         ["./src/modules/match/domain/*"],
+      "@match/application":      ["./src/modules/match/application"],
+      "@match/application/*":    ["./src/modules/match/application/*"],
+      "@match/adapters":         ["./src/modules/match/adapters"],
+      "@match/adapters/*":       ["./src/modules/match/adapters/*"],
+      "@match/ui":               ["./src/modules/match/ui"],
+      "@match/ui/*":             ["./src/modules/match/ui/*"],
+
+      "@stats/domain":           ["./src/modules/stats/domain"],
+      "@stats/domain/*":         ["./src/modules/stats/domain/*"],
+      "@stats/application":      ["./src/modules/stats/application"],
+      "@stats/application/*":    ["./src/modules/stats/application/*"],
+      "@stats/adapters":         ["./src/modules/stats/adapters"],
+      "@stats/adapters/*":       ["./src/modules/stats/adapters/*"],
+      "@stats/ui":               ["./src/modules/stats/ui"],
+      "@stats/ui/*":             ["./src/modules/stats/ui/*"],
+
+      "@tournament/domain":      ["./src/modules/tournament/domain"],
+      "@tournament/domain/*":    ["./src/modules/tournament/domain/*"],
+      "@tournament/application": ["./src/modules/tournament/application"],
+      "@tournament/application/*":["./src/modules/tournament/application/*"],
+      "@tournament/adapters":    ["./src/modules/tournament/adapters"],
+      "@tournament/adapters/*":  ["./src/modules/tournament/adapters/*"],
+      "@tournament/ui":          ["./src/modules/tournament/ui"],
+      "@tournament/ui/*":        ["./src/modules/tournament/ui/*"],
+
+      /* ── Shared ── */
+      "@shared/api":             ["./src/shared/api"],
+      "@shared/api/*":           ["./src/shared/api/*"],
+      "@shared/lib":             ["./src/shared/lib"],
+      "@shared/lib/*":           ["./src/shared/lib/*"],
+      "@shared/offline":         ["./src/shared/offline"],
+      "@shared/offline/*":       ["./src/shared/offline/*"],
+      "@shared/realtime":        ["./src/shared/realtime"],
+      "@shared/realtime/*":      ["./src/shared/realtime/*"],
+      "@shared/ui":              ["./src/shared/ui"],
+      "@shared/ui/*":            ["./src/shared/ui/*"],
+
+      /* ── App shell & Surfaces ── */
+      "@app":                    ["./src/app"],
+      "@app/*":                  ["./src/app/*"],
+      "@surfaces":               ["./src/surfaces"],
+      "@surfaces/*":             ["./src/surfaces/*"]
+    }
   },
   "include": ["src"]
 }
