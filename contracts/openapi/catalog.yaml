@@ -1,0 +1,261 @@
+openapi: 3.1.0
+info:
+  title: Connected Games - Catalog API
+  version: 0.1.0
+  description: Locals, tables and game types. Ver minimal for M1, only read.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /api/catalog
+    description: Through API Gateway
+security:
+  - bearerAuth: []
+tags:
+  - name: Locals
+    description: Locals and their details
+  - name: Tables
+    description: Tables installed in the locals and QR resolution
+  - name: Game Types
+    description: Games supported and their rules
+
+paths:
+  /tables/by-code/{code}:
+    get:
+      tags: [Tables]
+      operationId: resolveTableByCode
+      summary: Resolves the QR code to a table, local and game type
+      description: Public, because a guest arrives from the QR without logging in.
+      security: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Table found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableLookup'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /venues:
+    get:
+      tags: [Locals]
+      operationId: listVenues
+      summary: Locals List
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of locals for user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VenueSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /venues/{venueId}:
+    get:
+      tags: [Locals]
+      operationId: getVenue
+      summary: Local details
+      parameters:
+        - $ref: '#/components/parameters/VenueId'
+      responses:
+        '200':
+          description: Local found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Venue'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /venues/{venueId}/tables:
+    get:
+      tags: [Tables]
+      operationId: listTables
+      summary: Table of a local with their status
+      parameters:
+        - $ref: '#/components/parameters/VenueId'
+      responses:
+        '200':
+          description: Tables of the local
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Table'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /game-types:
+    get:
+      tags: [Game Types]
+      operationId: listGameTypes
+      summary: Game types supported
+      responses:
+        '200':
+          description: Game types available
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GameType'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    VenueId:
+      name: venueId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Token missing or invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    VenueType:
+      type: string
+      enum: [PUBLIC, PRIVATE]
+    TableStatus:
+      type: string
+      enum: [FREE, OCCUPIED, OFFLINE, MAINTENANCE]
+    GameMode:
+      type: string
+      enum: [INDIVIDUAL, SQUAD]
+
+    VenueSummary:
+      type: object
+      required: [id, name, city, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          examples: [Bar Belvedere]
+        city:
+          type: string
+          examples: [Roma]
+        type:
+          $ref: '#/components/schemas/VenueType'
+
+    Venue:
+      allOf:
+        - $ref: '#/components/schemas/VenueSummary'
+        - type: object
+          required: [address, organizationId]
+          properties:
+            address:
+              type: string
+            organizationId:
+              type: string
+              format: uuid
+
+    Table:
+      type: object
+      required: [id, venueId, name, code, gameTypeId, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          examples: [Calciobalilla verde - Tavolo 2]
+        code:
+          type: string
+          description: QR code printed on the table, used to resolve the table and local
+        gameTypeId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/TableStatus'
+
+    GameType:
+      type: object
+      required: [id, name, mode, participantsPerSide, pointsToWin]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          examples: [Calciobalilla]
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        participantsPerSide:
+          type: integer
+          minimum: 1
+        pointsToWin:
+          type: integer
+          minimum: 1
+
+    TableLookup:
+      type: object
+      required: [table, venue, gameType]
+      properties:
+        table:
+          $ref: '#/components/schemas/Table'
+        venue:
+          $ref: '#/components/schemas/VenueSummary'
+        gameType:
+          $ref: '#/components/schemas/GameType'
+
+    Problem:
+      type: object
+      description: Error response following RFC 7807
+      required: [title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
