@@ -4,4 +4,4 @@ plugins {
 
 rootProject.name = "connected-games-services"
 
-include("gateway", "identity", "catalog", "match", "tournament", "stats")
+include("gateway", "identity", "catalog", "match", "tournament", "stats", "architecture-rules")
