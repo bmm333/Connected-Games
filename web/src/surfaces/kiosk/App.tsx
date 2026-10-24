@@ -1,0 +1,19 @@
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { queryClient } from '@shared/api'
+import { KioskRouter } from './router'
+import { createKioskDependencies } from './composition-root'
+
+const dependencies = createKioskDependencies()
+
+export function App() {
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister: dependencies.queryPersister }}
+    >
+      <KioskRouter />
+    </PersistQueryClientProvider>
+  )
+}
+
+export default App
