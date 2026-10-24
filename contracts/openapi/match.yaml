@@ -1,0 +1,186 @@
+openapi: 3.1.0
+info:
+  title: Connected Games - Match API
+  version: 0.1.0
+  description: Match status and event history. Minimum version for M1, read-only.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /api/match
+    description: Through the gateway
+security: []
+tags:
+  - name: Matches
+    description: Match status and event history
+
+paths:
+  /tables/{tableId}/current-match:
+    get:
+      tags: [Matches]
+      operationId: getCurrentMatch
+      summary: Current or waiting match at a table
+      description: Public, because the QR page also shows the score to guests.
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /matches/{matchId}:
+    get:
+      tags: [Matches]
+      operationId: getMatch
+      summary: Match details
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /matches/{matchId}/timeline:
+    get:
+      tags: [Matches]
+      operationId: getMatchTimeline
+      summary: Match events in sequence order
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: Match timeline
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimelineEntry'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  parameters:
+    MatchId:
+      name: matchId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    Side:
+      type: string
+      enum: [RED, BLUE]
+    MatchStatus:
+      type: string
+      enum: [WAITING, IN_PROGRESS, COMPLETED, CANCELLED]
+    GameMode:
+      type: string
+      enum: [INDIVIDUAL, TEAMS]
+
+    MatchSide:
+      type: object
+      required: [side, score]
+      properties:
+        side:
+          $ref: '#/components/schemas/Side'
+        participantId:
+          type: string
+          description: Team or player; absent if the match started offline without login
+        displayName:
+          type: string
+          examples: [Lightning]
+        score:
+          type: integer
+          minimum: 0
+
+    Match:
+      type: object
+      required: [id, tableId, venueId, status, mode, pointsToWin, sides, startedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tableId:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/MatchStatus'
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        pointsToWin:
+          type: integer
+          minimum: 1
+        sides:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/MatchSide'
+        winnerSide:
+          $ref: '#/components/schemas/Side'
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+
+    TimelineEntry:
+      type: object
+      required: [seq, type, occurredAt]
+      properties:
+        seq:
+          type: integer
+          minimum: 1
+        type:
+          type: string
+          enum: [MatchStarted, GoalScored, MatchEnded]
+        occurredAt:
+          type: string
+          format: date-time
+        side:
+          $ref: '#/components/schemas/Side'
+
+    Problem:
+      type: object
+      description: Error in RFC 9457 format (Spring ProblemDetail)
+      required: [title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
