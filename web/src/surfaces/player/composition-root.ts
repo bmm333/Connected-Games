@@ -9,10 +9,12 @@ import {
   createResolveTableByCode,
   type ResolveTableByCode,
 } from '@use-cases/catalog/ResolveTableByCode'
+import { createAuthDependencies } from '@surfaces/shared/auth-dependencies'
 
 export interface PlayerDependencies {
   storage: KeyValueStoreUseCases
   queryPersister: ReturnType<typeof createPlatformQueryPersister>
+  auth: ReturnType<typeof createAuthDependencies>
   catalog: {
     resolveTableByCode: ResolveTableByCode
   }
@@ -28,6 +30,7 @@ export function createPlayerDependencies(): PlayerDependencies {
       platformStore,
       'PARTITA_QUERY_CACHE_V1',
     ),
+    auth: createAuthDependencies(),
     catalog: {
       resolveTableByCode: createResolveTableByCode(catalogRepository),
     },

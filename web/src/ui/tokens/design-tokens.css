@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --cg-color-accent: #5856d6;
   --cg-color-bg-primary: #ffffff;
   --cg-color-bg-grouped: #f2f2f7;
@@ -12,6 +12,7 @@
   --cg-color-accent-tinted: #eeeeff;
   --cg-color-accent-pressed: #4341ae;
   --cg-color-accent-hover: #4c4ac3;
+  --cg-color-accent-label: #4c4ac3;
   --cg-color-border-default: #dcdce2;
   --cg-color-border-subtle: #e5e5ea;
   --cg-color-team-red: #ff3b30;
@@ -43,6 +44,7 @@
   --cg-color-accent-tinted: #29274e;
   --cg-color-accent-pressed: #4341ae;
   --cg-color-accent-hover: #4c4ac3;
+  --cg-color-accent-label: #aaa8ff;
   --cg-color-border-default: #424246;
   --cg-color-border-subtle: #2c2c2e;
   --cg-color-team-red: #ff453a;

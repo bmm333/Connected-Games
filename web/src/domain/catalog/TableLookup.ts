@@ -17,7 +17,7 @@ export interface Table {
 export interface GameType {
   readonly id: string
   readonly name: string
-  readonly mode: 'INDIVIDUAL' | 'SQUAD'
+  readonly mode: 'INDIVIDUAL' | 'TEAM'
   readonly participantsPerSide: number
   readonly pointsToWin: number
 }

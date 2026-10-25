@@ -1,6 +1,7 @@
 export const designTokens = {
   color: {
     accent: 'var(--cg-color-accent)',
+    accentLabel: 'var(--cg-color-accent-label)',
     background: {
       primary: 'var(--cg-color-bg-primary)',
       grouped: 'var(--cg-color-bg-grouped)',

@@ -5,9 +5,9 @@ export function ProfileView() {
   const isOnline = useNetworkStatus()
 
   return (
-    <div className="space-y-6">
+    <div className="cg-mobile-page space-y-6">
       <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
-        <h1 className="text-2xl font-bold">Profilo Giocatore</h1>
+        <h1 className="text-2xl font-bold">Profilo</h1>
         <Link
           to="/"
           className="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition"
@@ -22,7 +22,7 @@ export function ProfileView() {
             P1
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Player One</h2>
+            <h2 className="text-lg font-semibold">Giulia Ferri</h2>
             <p className="text-xs text-neutral-400">ID: usr_player_001</p>
           </div>
         </div>

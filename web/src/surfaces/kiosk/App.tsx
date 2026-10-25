@@ -2,6 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { queryClient } from '@shared/api'
 import { KioskRouter } from './router'
 import { createKioskDependencies } from './composition-root'
+import { ThemeProvider } from '@ui'
 
 const dependencies = createKioskDependencies()
 
@@ -11,7 +12,9 @@ export function App() {
       client={queryClient}
       persistOptions={{ persister: dependencies.queryPersister }}
     >
-      <KioskRouter />
+      <ThemeProvider>
+        <KioskRouter />
+      </ThemeProvider>
     </PersistQueryClientProvider>
   )
 }

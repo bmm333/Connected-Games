@@ -4,10 +4,12 @@ import {
   createKeyValueStoreUseCases,
   type KeyValueStoreUseCases,
 } from '@use-cases/storage/CreateKeyValueStoreUseCases'
+import { createAuthDependencies } from '@surfaces/shared/auth-dependencies'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
   queryPersister: ReturnType<typeof createPlatformQueryPersister>
+  auth: ReturnType<typeof createAuthDependencies>
 }
 
 export function createConsoleDependencies(): ConsoleDependencies {
@@ -19,5 +21,6 @@ export function createConsoleDependencies(): ConsoleDependencies {
       platformStore,
       'PARTITA_QUERY_CACHE_CONSOLE_V1',
     ),
+    auth: createAuthDependencies(),
   }
 }
