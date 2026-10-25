@@ -20,8 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "generate:pwa-assets": "pwa-assets-generator --preset minimal public/favicon.svg",
-    "gen:api:catalog": "npx --yes openapi-typescript@7 ../contracts/openapi/catalog.yaml -o src/infrastructure/api/generated/catalog.d.ts",
-    "gen:api:match": "npx --yes openapi-typescript@7 ../contracts/openapi/match.yaml -o src/infrastructure/api/generated/match.d.ts"
+    "gen:api": "npx --yes openapi-typescript@7 ../contracts/openapi/catalog.yaml -o src/shared/api/generated/catalog.d.ts && npx --yes openapi-typescript@7 ../contracts/openapi/match.yaml -o src/shared/api/generated/match.d.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

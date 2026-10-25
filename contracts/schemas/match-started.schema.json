@@ -11,7 +11,7 @@
           "type": "object",
           "required": ["mode", "pointsToWin", "sides"],
           "properties": {
-            "mode": { "enum": ["INDIVIDUAL", "SQUADS"] },
+            "mode": { "enum": ["INDIVIDUAL", "TEAM"] },
             "pointsToWin": { "type": "integer", "minimum": 1 },
             "sides": {
               "type": "array",
@@ -20,7 +20,7 @@
                 "type": "object",
                 "required": ["side"],
                 "properties": {
-                  "side": { "enum": ["ROSSI", "BLU"] },
+                  "side": { "enum": ["RED", "BLUE"] },
                   "participantId": { "type": "string", "description": "Squad or player: missing if the match started offline without login" },
                   "displayName": { "type": "string", "description": "Name of the team or nickname of the player" }
                 },

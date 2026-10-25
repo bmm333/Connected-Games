@@ -101,7 +101,7 @@ export interface components {
         /** @enum {string} */
         TableStatus: "FREE" | "OCCUPIED" | "OFFLINE" | "MAINTENANCE";
         /** @enum {string} */
-        GameMode: "INDIVIDUAL" | "SQUAD";
+        GameMode: "INDIVIDUAL" | "TEAM";
         VenueSummary: {
             /** Format: uuid */
             id: string;
@@ -123,7 +123,7 @@ export interface components {
             venueId: string;
             /** @example Calciobalilla verde - Tavolo 2 */
             name: string;
-            /** @description QR code printed on the table, used to resolve the table and local */
+            /** @description QR code printed on the table, unique across the whole platform */
             code: string;
             /** Format: uuid */
             gameTypeId: string;

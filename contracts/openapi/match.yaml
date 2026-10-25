@@ -101,7 +101,7 @@ components:
       enum: [WAITING, IN_PROGRESS, COMPLETED, CANCELLED]
     GameMode:
       type: string
-      enum: [INDIVIDUAL, TEAMS]
+      enum: [INDIVIDUAL, TEAM]
 
     MatchSide:
       type: object
