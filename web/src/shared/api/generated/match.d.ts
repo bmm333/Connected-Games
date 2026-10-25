@@ -67,7 +67,7 @@ export interface components {
         /** @enum {string} */
         MatchStatus: "WAITING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
         /** @enum {string} */
-        GameMode: "INDIVIDUAL" | "TEAMS";
+        GameMode: "INDIVIDUAL" | "TEAM";
         MatchSide: {
             side: components["schemas"]["Side"];
             /** @description Team or player; absent if the match started offline without login */
