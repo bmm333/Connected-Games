@@ -67,7 +67,6 @@ jobs:
   build:
     name: Build and test ${{ matrix.service }}
     needs: changes
-    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs[matrix.service] == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,4 +95,5 @@ jobs:
           cache: gradle
 
       - name: Build and test service
+        if: needs.changes.outputs.shared == 'true' || needs.changes.outputs[matrix.service] == 'true'
         run: ./gradlew :${{ matrix.service }}:build --no-daemon
