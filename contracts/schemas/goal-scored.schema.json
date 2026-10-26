@@ -10,7 +10,7 @@
         "payload": {
           "type": "object",
           "required": ["side"],
-          "properties": { "side": { "enum": ["ROSSI", "BLU"] } },
+          "properties": { "side": { "enum": ["RED", "BLUE"] } },
           "additionalProperties": false
         }
       }

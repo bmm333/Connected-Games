@@ -11,6 +11,9 @@ import boundaries from 'eslint-plugin-boundaries'
 const DOMAIN_GLOB      = 'src/modules/*/domain/**/*.{ts,tsx}'
 const APPLICATION_GLOB = 'src/modules/*/application/**/*.{ts,tsx}'
 const ADAPTERS_GLOB    = 'src/modules/*/adapters/**/*.{ts,tsx}'
+const GLOBAL_DOMAIN_GLOB = 'src/domain/**/*.{ts,tsx}'
+const GLOBAL_APPLICATION_GLOB = 'src/use-cases/**/*.{ts,tsx}'
+const GLOBAL_INFRASTRUCTURE_GLOB = 'src/infrastructure/**/*.{ts,tsx}'
 const TEST_GLOB        = '**/*.{test,spec}.{ts,tsx}'
 
 // ─── Shared settings (resolver used by both import-x and boundaries) ──────────
@@ -35,7 +38,11 @@ const BOUNDARY_ELEMENTS = [
   { type: 'domain',      pattern: 'src/modules/*/domain/**'      },
   { type: 'application', pattern: 'src/modules/*/application/**' },
   { type: 'adapters',    pattern: 'src/modules/*/adapters/**'    },
+  { type: 'domain',      pattern: 'src/domain/**'                 },
+  { type: 'application', pattern: 'src/use-cases/**'              },
+  { type: 'adapters',    pattern: 'src/infrastructure/**'         },
   { type: 'ui',          pattern: 'src/modules/*/ui/**'          },
+  { type: 'ui',          pattern: 'src/ui/**'                    },
   { type: 'shared',      pattern: 'src/shared/**'                },
   { type: 'app',         pattern: 'src/app/**'                   },
   { type: 'surfaces',    pattern: 'src/surfaces/**'              },
@@ -45,7 +52,7 @@ const BOUNDARY_ELEMENTS = [
 export default defineConfig([
 
   // [0] Global ignores
-  globalIgnores(['dist', 'android', 'ios', 'node_modules', 'coverage']),
+  globalIgnores(['dist', 'dev-dist', 'android', 'ios', 'node_modules', 'coverage']),
 
   // [1] Base — all TypeScript / TSX files
   //   Establishes baseline severity for every file in the project.
@@ -113,6 +120,14 @@ export default defineConfig([
       'no-throw-literal': 'error',
     },
   },
+  {
+    name: 'layer/global-domain',
+    files: [GLOBAL_DOMAIN_GLOB],
+    rules: {
+      'no-console': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
 
   // ── [3] Application layer — use cases / orchestration ─────────────────────
   //   Slightly more lenient than domain (logging useful during dev),
@@ -122,6 +137,14 @@ export default defineConfig([
     files: [APPLICATION_GLOB],
     rules: {
       'no-console':                        'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
+    name: 'layer/global-application',
+    files: [GLOBAL_APPLICATION_GLOB],
+    rules: {
+      'no-console': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
@@ -135,6 +158,14 @@ export default defineConfig([
     rules: {
       'no-console':                        'warn',
       /** warn instead of error — adapters may need `any` for SDK interop */
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
+  {
+    name: 'layer/global-infrastructure',
+    files: [GLOBAL_INFRASTRUCTURE_GLOB],
+    rules: {
+      'no-console': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
@@ -175,8 +206,8 @@ export default defineConfig([
     settings: {
       ...IMPORT_RESOLVER_SETTINGS,
       'boundaries/elements': BOUNDARY_ELEMENTS,
-      /** Tests are excluded from boundary checks (they cross layers by design) */
-      'boundaries/ignore': [TEST_GLOB],
+      /** Tests and static assets are excluded from boundary checks */
+      'boundaries/ignore': [TEST_GLOB, '**/*.css', '**/*.svg', '**/*.png', '**/*.ico'],
     },
     rules: {
       /**

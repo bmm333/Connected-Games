@@ -162,7 +162,7 @@ components:
       enum: [FREE, OCCUPIED, OFFLINE, MAINTENANCE]
     GameMode:
       type: string
-      enum: [INDIVIDUAL, SQUAD]
+      enum: [INDIVIDUAL, TEAM]
 
     VenueSummary:
       type: object
@@ -207,7 +207,7 @@ components:
           examples: [Calciobalilla verde - Tavolo 2]
         code:
           type: string
-          description: QR code printed on the table, used to resolve the table and local
+          description: QR code printed on the table, unique across the whole platform
         gameTypeId:
           type: string
           format: uuid

@@ -24,6 +24,17 @@
 
     /* Path Aliases — Clean Architecture layers */
     "paths": {
+      "@domain": ["./src/domain"],
+      "@domain/*": ["./src/domain/*"],
+      "@use-cases": ["./src/use-cases"],
+      "@use-cases/*": ["./src/use-cases/*"],
+      "@infrastructure": ["./src/infrastructure"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@ui": ["./src/ui"],
+      "@ui/*": ["./src/ui/*"],
+      "@surfaces": ["./src/surfaces"],
+      "@surfaces/*": ["./src/surfaces/*"],
+
       /* ── Modules ── */
       "@catalog/domain":         ["./src/modules/catalog/domain"],
       "@catalog/domain/*":       ["./src/modules/catalog/domain/*"],

@@ -19,13 +19,13 @@
                 "type": "object",
                 "required": ["side", "score"],
                 "properties": {
-                  "side": { "enum": ["ROSSI", "BLU"] },
+                  "side": { "enum": ["RED", "BLUE"] },
                   "score": { "type": "integer", "minimum": 0 }
                 },
                 "additionalProperties": false
               }
             },
-            "winnerSide": { "enum": ["ROSSI", "BLU"], "description": "Assente se la partita è annullata o in pareggio" }
+            "winnerSide": { "enum": ["RED", "BLUE"], "description": "Assente se la partita è annullata o in pareggio" }
           },
           "additionalProperties": false
         }

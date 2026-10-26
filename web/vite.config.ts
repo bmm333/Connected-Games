@@ -4,9 +4,12 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
+import { SHARED_ALIASES } from './vite.config.base.ts'
 
 // ─── Path Alias helpers ────────────────────────────────────────────────────
 const r = (...parts: string[]) => path.resolve(import.meta.dirname, 'src', ...parts)
+const isApiRequest = ({ url }: { url: URL }) =>
+  /^\/api\/(?:catalog|games|tournaments|stats)(?:\/|$)/i.test(url.pathname)
 
 /** All feature modules and their Clean Architecture layers */
 const MODULES = ['catalog', 'identity', 'match', 'stats', 'tournament'] as const
@@ -26,6 +29,7 @@ const moduleAliases = Object.fromEntries(
 export default defineConfig({
   resolve: {
     alias: {
+      ...SHARED_ALIASES,
       // Module layer aliases (auto-generated — add new modules to MODULES above)
       ...moduleAliases,
 
@@ -132,7 +136,7 @@ export default defineConfig({
           },
           // 3. API read queries (catalog, tournaments, games metadata)
           {
-            urlPattern: /^https?:\/\/[^/]+\/api\/(?:catalog|games|tournaments|stats)\/.*/i,
+            urlPattern: isApiRequest,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-read-cache',
