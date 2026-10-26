@@ -1,0 +1,99 @@
+name: Services CI
+
+on:
+  push:
+    paths:
+      - "services/**"
+      - "docker-compose.yml"
+      - "infra/docker/postgres/**"
+      - ".github/workflows/services-ci.yml"
+  pull_request:
+    paths:
+      - "services/**"
+      - "docker-compose.yml"
+      - "infra/docker/postgres/**"
+      - ".github/workflows/services-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: services-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      identity: ${{ steps.filter.outputs.identity }}
+      catalog: ${{ steps.filter.outputs.catalog }}
+      match: ${{ steps.filter.outputs.match }}
+      tournament: ${{ steps.filter.outputs.tournament }}
+      stats: ${{ steps.filter.outputs.stats }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - "services/settings.gradle.kts"
+              - "services/gradle/**"
+              - "services/gradlew"
+              - "services/gradlew.bat"
+              - "services/architecture-rules/**"
+              - "docker-compose.yml"
+              - "infra/docker/postgres/**"
+              - ".github/workflows/services-ci.yml"
+            gateway:
+              - "services/gateway/**"
+            identity:
+              - "services/identity/**"
+            catalog:
+              - "services/catalog/**"
+            match:
+              - "services/match/**"
+            tournament:
+              - "services/tournament/**"
+            stats:
+              - "services/stats/**"
+
+  build:
+    name: Build and test ${{ matrix.service }}
+    needs: changes
+    if: needs.changes.outputs.shared == 'true' || needs.changes.outputs[matrix.service] == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - identity
+          - catalog
+          - match
+          - tournament
+          - stats
+
+    defaults:
+      run:
+        working-directory: services
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Build and test service
+        run: ./gradlew :${{ matrix.service }}:build --no-daemon
