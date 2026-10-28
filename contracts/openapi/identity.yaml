@@ -6,7 +6,7 @@ info:
     Users, sessions and device pairing. Every login returns a signed JWT
     (`accessToken`) that the other services verify with the public keys published
     at `/.well-known/jwks.json`.
-
+    
     ## Session kinds
 
     - `GUEST`: a player who scanned a table QR code and only chose a nickname;
