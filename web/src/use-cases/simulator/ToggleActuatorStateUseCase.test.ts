@@ -62,4 +62,45 @@ describe('ToggleActuatorStateUseCase', () => {
     ).rejects.toThrow('broker unavailable')
     expect(repository.update).not.toHaveBeenCalled()
   })
+
+  it('rejects invalid switch and slider values before publishing', async () => {
+    const mqtt = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      publish: vi.fn(),
+      subscribe: vi.fn(),
+      isConnected: vi.fn(),
+    } as unknown as MqttClientService
+    const repository: ActuatorStateRepository = {
+      list: vi.fn(),
+      get: vi.fn().mockResolvedValue({
+        ...actuator,
+        type: 'slider',
+        min: 0,
+        max: 100,
+      }),
+      update: vi.fn(),
+      replace: vi.fn(),
+    }
+
+    await expect(
+      createToggleActuatorStateUseCase(repository, mqtt)('relay-1', 101),
+    ).rejects.toThrow('exceeds its maximum')
+    expect(mqtt.publish).not.toHaveBeenCalled()
+  })
+
+  it('rejects missing and disabled actuators', async () => {
+    const repository: ActuatorStateRepository = {
+      list: vi.fn(),
+      get: vi.fn().mockResolvedValue(null),
+      update: vi.fn(),
+      replace: vi.fn(),
+    }
+    const mqtt = { publish: vi.fn() } as unknown as MqttClientService
+    const useCase = createToggleActuatorStateUseCase(repository, mqtt)
+
+    await expect(useCase('missing', true)).rejects.toThrow('Actuator not found')
+    vi.mocked(repository.get).mockResolvedValue({ ...actuator, enabled: false })
+    await expect(useCase('relay-1', true)).rejects.toThrow('Actuator is disabled')
+  })
 })

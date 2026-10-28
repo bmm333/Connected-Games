@@ -32,4 +32,28 @@ describe('PublishMqttEventUseCase', () => {
       createPublishMqttEventUseCase(service)('devices/+/events', {}),
     ).rejects.toThrow('Invalid MQTT publish topic')
   })
+
+  it('rejects empty path segments and oversized payloads', async () => {
+    const service = { publish: vi.fn() } as unknown as MqttClientService
+    const publish = createPublishMqttEventUseCase(service)
+
+    await expect(publish('devices//events', {})).rejects.toThrow('Invalid MQTT publish topic')
+    await expect(publish('devices/events', 'x'.repeat(64 * 1024 + 1)))
+      .rejects.toThrow('MQTT payload exceeds the 64 KiB limit')
+    expect(service.publish).not.toHaveBeenCalled()
+  })
+
+  it('propagates broker failures', async () => {
+    const service: MqttClientService = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      publish: vi.fn().mockRejectedValue(new Error('broker unavailable')),
+      subscribe: vi.fn(),
+      isConnected: vi.fn(),
+    }
+
+    await expect(
+      createPublishMqttEventUseCase(service)('devices/events', { ready: true }),
+    ).rejects.toThrow('broker unavailable')
+  })
 })
