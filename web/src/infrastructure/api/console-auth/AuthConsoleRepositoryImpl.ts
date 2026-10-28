@@ -1,7 +1,7 @@
 import type { AuthConsoleRepository } from '@domain/console/auth/AuthConsoleRepository'
 import type { ConsoleSessionStore } from '@domain/console/auth/ConsoleSessionStore'
 import type { ConsoleAuthApiClient } from './ConsoleAuthApiClient'
-import { mapConsoleUserSession } from './mappers'
+import { mapConsoleUserSession, mapCurrentUserSession } from './mappers'
 
 export function createAuthConsoleRepository(
   client: ConsoleAuthApiClient,
@@ -18,12 +18,10 @@ export function createAuthConsoleRepository(
     async getCurrentSession() {
       const storedSession = await sessionStore.get()
       if (storedSession === undefined) return undefined
-      const currentSession = await client.getCurrentSession(
+      const currentUser = await client.getCurrentUser(
         storedSession.token.accessToken,
       )
-      return currentSession === undefined
-        ? undefined
-        : mapConsoleUserSession(currentSession)
+      return mapCurrentUserSession(storedSession, currentUser)
     },
     async refreshToken(refreshToken) {
       return mapConsoleUserSession(await client.refreshToken(refreshToken))

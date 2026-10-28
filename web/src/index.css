@@ -9,6 +9,15 @@ html, body, #root {
 body {
   margin: 0;
   font-family: Inter, system-ui, sans-serif;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--cg-color-accent) 32%, transparent);
+  outline-offset: 2px;
 }
 
 /* Legacy utility classes remain compatible with the semantic theme tokens. */

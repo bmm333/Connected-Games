@@ -14,20 +14,20 @@ export function AdminSectionShell({
 }: AdminSectionShellProps) {
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--cg-color-border-subtle)] pb-6">
+      <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <Link
-            to="/dashboard"
-            className="mb-3 inline-flex text-sm font-medium text-[var(--cg-color-accent-label)]"
-          >
-            ← Panoramica
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          <p className="mt-1 text-sm text-[var(--cg-color-label-secondary)]">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--cg-color-accent-label)]">
+            Workspace venue
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--cg-color-label-secondary)]">
             {description}
           </p>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-3">
+          <Link to="/overview" className="cg-button cg-button-secondary">Panoramica</Link>
+          <ThemeToggle />
+        </div>
       </header>
       {children}
     </div>

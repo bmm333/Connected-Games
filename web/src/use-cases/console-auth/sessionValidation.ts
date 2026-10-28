@@ -2,11 +2,10 @@ import type { Permission, Role } from '@domain/console/auth/Role'
 import type { UserSession } from '@domain/console/auth/UserSession'
 
 const roles: readonly Role[] = [
-  'admin',
-  'operator',
-  'manager',
-  'auditor',
-  'viewer',
+  'player',
+  'venue_manager',
+  'game_admin',
+  'platform_admin',
 ]
 
 const permissions: readonly Permission[] = [

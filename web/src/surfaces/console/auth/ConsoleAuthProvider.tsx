@@ -17,7 +17,7 @@ export function ConsoleAuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const sessionQuery = useQuery({
     queryKey: ['console-auth', 'session'],
-    queryFn: async () => (await consoleAuth.sessionStore.get()) ?? null,
+    queryFn: async () => (await consoleAuth.getCurrentSession()) ?? null,
     staleTime: 30_000,
     retry: false,
   })

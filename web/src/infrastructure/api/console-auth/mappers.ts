@@ -1,74 +1,88 @@
+import type { components } from '@shared/api/generated/identity'
 import type { Permission, Role } from '@domain/console/auth/Role'
 import type { UserSession } from '@domain/console/auth/UserSession'
 
-const roles: readonly Role[] = [
-  'admin',
-  'operator',
-  'manager',
-  'auditor',
-  'viewer',
-]
-const permissions: readonly Permission[] = [
-  'overview:view',
-  'tables:read',
-  'tables:write',
-  'devices:read',
-  'devices:write',
-]
+type IdentityUser = components['schemas']['User']
+type IdentitySession = components['schemas']['UserSession']
+type IdentityRole = components['schemas']['Role']
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+const roleMap: Record<IdentityRole, Role> = {
+  PLAYER: 'player',
+  VENUE_MANAGER: 'venue_manager',
+  GAME_ADMIN: 'game_admin',
+  PLATFORM_ADMIN: 'platform_admin',
 }
 
-function requiredString(value: unknown, field: string): string {
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(`Console auth response has invalid ${field}`)
+const permissionsByRole: Record<Role, Permission[]> = {
+  player: [],
+  venue_manager: ['overview:view', 'tables:read', 'devices:read', 'devices:write'],
+  game_admin: ['overview:view', 'tables:read', 'tables:write', 'devices:read'],
+  platform_admin: [
+    'overview:view',
+    'tables:read',
+    'tables:write',
+    'devices:read',
+    'devices:write',
+  ],
+}
+
+function mapUser(user: IdentityUser) {
+  return {
+    id: user.id,
+    name: user.displayName,
+    email: user.email,
   }
-  return value
+}
+
+function roleFromUser(user: IdentityUser): Role {
+  const priority: IdentityRole[] = [
+    'PLATFORM_ADMIN',
+    'GAME_ADMIN',
+    'VENUE_MANAGER',
+    'PLAYER',
+  ]
+  const role = priority.find((candidate) =>
+    user.roles.some((assignment) => assignment.role === candidate),
+  )
+  if (role === undefined) {
+    throw new Error('Identity response did not contain a Console role')
+  }
+  return roleMap[role]
+}
+
+export function permissionsForRole(role: Role): Permission[] {
+  return [...permissionsByRole[role]]
 }
 
 export function mapConsoleUserSession(value: unknown): UserSession {
-  if (!isRecord(value) || !isRecord(value.user) || !isRecord(value.token)) {
-    throw new Error('Console auth response has invalid session')
+  const session = value as IdentitySession
+  if (session.kind !== 'USER') {
+    throw new Error('Identity response is not a user session')
   }
 
-  const role = value.role
-  const activePermissions = value.permissions
-  if (
-    typeof role !== 'string' ||
-    !roles.includes(role as Role) ||
-    !Array.isArray(activePermissions) ||
-    !activePermissions.every(
-      (permission): permission is Permission =>
-        typeof permission === 'string' &&
-        permissions.includes(permission as Permission),
-    )
-  ) {
-    throw new Error('Console auth response has invalid role or permissions')
-  }
-
+  const role = roleFromUser(session.user)
   return {
-    user: {
-      id: requiredString(value.user.id, 'user.id'),
-      name: requiredString(value.user.name, 'user.name'),
-      email: requiredString(value.user.email, 'user.email'),
-      ...(value.user.avatar === undefined
-        ? {}
-        : { avatar: requiredString(value.user.avatar, 'user.avatar') }),
-    },
-    role: role as Role,
-    permissions: activePermissions,
+    user: mapUser(session.user),
+    role,
+    permissions: permissionsForRole(role),
     token: {
-      accessToken: requiredString(value.token.accessToken, 'token.accessToken'),
-      ...(value.token.refreshToken === undefined
-        ? {}
-        : {
-            refreshToken: requiredString(
-              value.token.refreshToken,
-              'token.refreshToken',
-            ),
-          }),
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
     },
-    expiresAt: requiredString(value.expiresAt, 'expiresAt'),
+    expiresAt: session.expiresAt,
+  }
+}
+
+export function mapCurrentUserSession(
+  storedSession: UserSession,
+  value: unknown,
+): UserSession {
+  const user = value as IdentityUser
+  const role = roleFromUser(user)
+  return {
+    ...storedSession,
+    user: mapUser(user),
+    role,
+    permissions: permissionsForRole(role),
   }
 }

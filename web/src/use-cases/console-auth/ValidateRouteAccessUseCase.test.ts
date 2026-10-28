@@ -30,22 +30,22 @@ function createSubject(currentSession: UserSession | undefined) {
 
 describe('createValidateRouteAccessUseCase', () => {
   it('allows an admin to access device management', async () => {
-    const { validate } = createSubject(session('admin', ['devices:write']))
+    const { validate } = createSubject(session('platform_admin', ['devices:write']))
 
     await expect(validate({ permission: 'devices:write' })).resolves.toBe(true)
   })
 
   it('denies an operator without the required device permission', async () => {
-    const { validate } = createSubject(session('operator', ['overview:view']))
+    const { validate } = createSubject(session('venue_manager', ['overview:view']))
 
     await expect(validate({ permission: 'devices:write' })).resolves.toBe(false)
   })
 
   it('denies a role not included in the route requirement', async () => {
-    const { validate } = createSubject(session('operator', ['tables:read']))
+    const { validate } = createSubject(session('venue_manager', ['tables:read']))
 
     await expect(
-      validate({ roles: ['admin'], permission: 'tables:read' }),
+      validate({ roles: ['platform_admin'], permission: 'tables:read' }),
     ).resolves.toBe(false)
   })
 

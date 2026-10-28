@@ -81,7 +81,7 @@ define(['./workbox-9974be49'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.i875m7pnqjc"
+    "revision": "0.0plboeh85lk"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
@@ -106,7 +106,9 @@ define(['./workbox-9974be49'], (function (workbox) { 'use strict';
       maxAgeSeconds: 2592000
     })]
   }), 'GET');
-  workbox.registerRoute(/^https?:\/\/[^/]+\/api\/(?:catalog|games|tournaments|stats)\/.*/i, new workbox.NetworkFirst({
+  workbox.registerRoute(({
+    url
+  }) => /^\/api\/(?:catalog|games|tournaments|stats)(?:\/|$)/i.test(url.pathname), new workbox.NetworkFirst({
     "cacheName": "api-read-cache",
     "networkTimeoutSeconds": 3,
     plugins: [new workbox.CacheableResponsePlugin({

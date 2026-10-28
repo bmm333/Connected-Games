@@ -71,6 +71,13 @@ export function ConsoleShellLayout() {
           <Outlet />
         </main>
       </div>
+      <nav className="cg-mobile-nav" aria-label="Navigazione Console">
+        {visibleNavigation.map(({ label, to }) => (
+          <Link key={to} to={to} className={`cg-mobile-nav-link${location.pathname === to ? ' is-active' : ''}`}>
+            <span>{label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   )
 }

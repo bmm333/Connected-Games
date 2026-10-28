@@ -15,15 +15,8 @@ export function createLoginWithRoleUseCase(
   sessionStore: ConsoleSessionStore,
 ): LoginWithRoleUseCase {
   return async (request) => {
-    if (request.method === 'credentials') {
-      if (request.email.trim().length === 0 || request.password.length === 0) {
-        throw new Error('Console email and password are required')
-      }
-    } else if (
-      request.provider.trim().length === 0 ||
-      request.assertion.trim().length === 0
-    ) {
-      throw new Error('Console SSO provider and assertion are required')
+    if (request.email.trim().length === 0 || request.password.length === 0) {
+      throw new Error('Console email and password are required')
     }
 
     const session = validateUserSession(await repository.login(request))

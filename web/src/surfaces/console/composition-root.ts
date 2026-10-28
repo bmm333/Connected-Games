@@ -21,6 +21,7 @@ import { createLoginWithRoleUseCase } from '@use-cases/console-auth/LoginWithRol
 import { createLogoutUseCase } from '@use-cases/console-auth/LogoutUseCase'
 import { createGetUserPermissionsUseCase } from '@use-cases/console-auth/GetUserPermissionsUseCase'
 import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/ValidateRouteAccessUseCase'
+import type { UserSession } from '@domain/console/auth/UserSession'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -37,6 +38,7 @@ export interface ConsoleDependencies {
     getPermissions: ReturnType<typeof createGetUserPermissionsUseCase>
     validateRouteAccess: ReturnType<typeof createValidateRouteAccessUseCase>
     rolePermissionService: typeof rolePermissionService
+    getCurrentSession: () => Promise<UserSession | undefined>
   }
 }
 
@@ -76,6 +78,7 @@ export function createConsoleDependencies(): ConsoleDependencies {
         rolePermissionService,
       ),
       rolePermissionService,
+      getCurrentSession: () => consoleAuthRepository.getCurrentSession(),
     },
   }
 }

@@ -1,25 +1,22 @@
 import { Link, useParams } from 'react-router'
 import { ScoreBoard } from '@match/ui/ScoreBoard'
+import { Badge } from '@ui'
 
 export function MatchView() {
   const { id = 'live-match' } = useParams()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+    <div className="cg-mobile-page space-y-6">
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--cg-color-border-subtle)] pb-5">
         <div>
-          <span className="text-xs font-mono text-purple-400">SESSIONE: #{id}</span>
-          <h1 className="text-2xl font-bold">Stanza di Gioco</h1>
+          <Badge tone="blue">Sessione live</Badge>
+          <h1 className="mt-2 text-2xl font-bold">Stanza di gioco</h1>
+          <p className="mt-1 text-xs text-[var(--cg-color-label-secondary)]">Sessione #{id}</p>
         </div>
-        <Link
-          to="/"
-          className="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition"
-        >
-          ← Torna alla Lobby
-        </Link>
+        <Link to="/lobby" className="cg-button cg-button-secondary text-sm">← Lobby</Link>
       </div>
-
       <ScoreBoard initialHomePlayer="Giocatore 1" initialAwayPlayer="Giocatore 2" />
+      <p className="text-center text-xs text-[var(--cg-color-label-tertiary)]">I punti vengono sincronizzati automaticamente quando sei online.</p>
     </div>
   )
 }

@@ -14,7 +14,7 @@ function renderLogin(login = vi.fn().mockResolvedValue(undefined)) {
       name: 'Operator',
       email: 'operator@example.com',
     },
-    role: 'operator' as const,
+    role: 'venue_manager' as const,
     permissions: ['overview:view' as const],
     token: { accessToken: 'token' },
     expiresAt: '2027-01-01T00:00:00.000Z',
@@ -22,6 +22,7 @@ function renderLogin(login = vi.fn().mockResolvedValue(undefined)) {
   const dependencies = {
     consoleAuth: {
       sessionStore: { get: vi.fn().mockResolvedValue(undefined) },
+      getCurrentSession: vi.fn().mockResolvedValue(undefined),
       login: login.mockResolvedValue(authenticatedSession),
       logout: vi.fn(),
       getPermissions: vi.fn(),
@@ -58,7 +59,6 @@ describe('ConsoleLoginPage', () => {
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith({
-        method: 'credentials',
         email: 'operator@example.com',
         password: 'secret',
         remember: false,

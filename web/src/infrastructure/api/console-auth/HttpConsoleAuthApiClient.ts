@@ -1,58 +1,52 @@
-import type { ConsoleAuthApiClient } from './ConsoleAuthApiClient'
+import createClient from 'openapi-fetch'
 import type { ConsoleLoginRequest } from '@domain/console/auth/AuthConsoleRepository'
-
-async function request(
-  baseUrl: string,
-  path: string,
-  init?: RequestInit,
-): Promise<unknown> {
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers: { Accept: 'application/json', ...init?.headers },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Console auth request failed (HTTP ${response.status})`)
-  }
-
-  return response.status === 204 ? undefined : response.json()
-}
+import type { paths } from '@shared/api/generated/identity'
+import type { ConsoleAuthApiClient } from './ConsoleAuthApiClient'
 
 export function createHttpConsoleAuthApiClient(
-  baseUrl = import.meta.env.VITE_CONSOLE_AUTH_API_URL ?? '/api/console/auth',
+  baseUrl = import.meta.env.VITE_IDENTITY_API_URL ?? '/api/identity',
 ): ConsoleAuthApiClient {
+  const client = createClient<paths>({ baseUrl, credentials: 'include' })
+
   return {
-    login: (payload: ConsoleLoginRequest) =>
-      request(baseUrl, '/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }),
-    logout: (accessToken) =>
-      request(baseUrl, '/logout', {
-        method: 'POST',
+    async login(payload: ConsoleLoginRequest) {
+      const result = await client.POST('/sessions', { body: payload })
+      if (result.error !== undefined) {
+        throw new Error(`Identity login failed (HTTP ${result.response.status})`)
+      }
+      return result.data
+    },
+    async logout(accessToken) {
+      const result = await client.DELETE('/sessions/current', {
         headers: accessToken
           ? { Authorization: `Bearer ${accessToken}` }
           : undefined,
-      }).then(() => undefined),
-    getCurrentSession: async (accessToken) => {
-      try {
-        return await request(baseUrl, '/session', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('(HTTP 401)')) {
-          return undefined
-        }
-        throw error
+      })
+      if (result.error !== undefined) {
+        throw new Error(`Identity logout failed (HTTP ${result.response.status})`)
       }
     },
-    refreshToken: (refreshToken) =>
-      request(baseUrl, '/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      }),
+    async getCurrentUser(accessToken) {
+      const result = await client.GET('/users/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (result.error !== undefined) {
+        throw new Error(
+          `Identity session validation failed (HTTP ${result.response.status})`,
+        )
+      }
+      return result.data
+    },
+    async refreshToken(refreshToken) {
+      const result = await client.POST('/sessions/refresh', {
+        body: { refreshToken },
+      })
+      if (result.error !== undefined) {
+        throw new Error(
+          `Identity token refresh failed (HTTP ${result.response.status})`,
+        )
+      }
+      return result.data
+    },
   }
 }
