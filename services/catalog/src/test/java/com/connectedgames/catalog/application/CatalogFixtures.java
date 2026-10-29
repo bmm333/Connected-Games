@@ -14,7 +14,7 @@ import com.connectedgames.catalog.domain.venue.VenueType;
 
 import java.util.UUID;
 
-/** Sample data shared by the application tests (same names as the design sample data). */
+/** Sample data shared by the application tests */
 final class CatalogFixtures {
 
     private CatalogFixtures() {
