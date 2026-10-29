@@ -1,11 +1,10 @@
 import { Link } from 'react-router'
+import { Badge, Button, Card } from '@ui'
+import { useDevicesList, useExecuteDeviceCommand } from '../hooks/useConsoleQueries'
 
 export function DeviceMonitorView() {
-  const devices = [
-    { id: 'kiosk-01', type: 'Totem Touch 43"', status: 'Online', ip: '192.168.1.101', latency: '4ms' },
-    { id: 'kiosk-02', type: 'Totem Touch 43"', status: 'Online', ip: '192.168.1.102', latency: '6ms' },
-    { id: 'android-box-01', type: 'Capacitor Android TV', status: 'Online', ip: '192.168.1.150', latency: '12ms' },
-  ]
+  const devices = useDevicesList()
+  const command = useExecuteDeviceCommand()
 
   return (
     <div className="space-y-6">
@@ -22,7 +21,7 @@ export function DeviceMonitorView() {
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900">
+      {devices.isPending ? <p>Caricamento…</p> : devices.isError ? <p>Impossibile caricare i dispositivi.</p> : <Card elevated className="overflow-hidden p-0">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
@@ -34,22 +33,21 @@ export function DeviceMonitorView() {
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-850">
-            {devices.map(d => (
+            {devices.data.map(d => (
               <tr key={d.id} className="hover:bg-neutral-800/40 transition">
                 <td className="p-4 font-mono font-medium text-white">{d.id}</td>
-                <td className="p-4 text-neutral-300">{d.type}</td>
-                <td className="p-4 font-mono text-xs text-neutral-400">{d.ip}</td>
-                <td className="p-4 font-mono text-xs text-purple-400">{d.latency}</td>
+                <td className="p-4 text-neutral-300">{d.surfaceType}</td>
+                <td className="p-4 font-mono text-xs text-neutral-400">{d.hardwareInfo?.ip ?? '—'}</td>
+                <td className="p-4 font-mono text-xs text-purple-400">{d.lastPing ?? 'Mai'}</td>
                 <td className="p-4 text-right">
-                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400">
-                    {d.status}
-                  </span>
+                  <Badge tone={d.status === 'online' ? 'success' : 'destructive'}>{d.status}</Badge>
+                  <Button className="ml-2" variant="secondary" disabled={command.isPending} onClick={() => command.mutate({ deviceId: d.id, command: 'sync' })}>Sync</Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>}
     </div>
   )
 }

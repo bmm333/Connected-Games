@@ -13,7 +13,7 @@ interface NavItem {
 
 const navigation: Record<AppSurface, NavItem[]> = {
   console: [
-    { label: 'Panoramica', to: '/dashboard', icon: LayoutDashboard },
+    { label: 'Panoramica', to: '/overview', icon: LayoutDashboard },
     { label: 'Tavoli', to: '/tables', icon: Gamepad2 },
     { label: 'Partite live', to: '/live', icon: Monitor },
     { label: 'Tornei', to: '/tournaments', icon: Trophy },
@@ -46,7 +46,7 @@ export function AppShell({ surface, children, title, subtitle }: AppShellProps) 
   }
   const items = navigation[surface]
   const isActive = (to: string) =>
-    location.pathname === to || (to === '/dashboard' && location.pathname === '/')
+    location.pathname === to || location.pathname.startsWith(`${to}/`)
 
   return (
     <div className={`cg-app-shell cg-app-shell-${surface}`}>

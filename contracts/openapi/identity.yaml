@@ -1,0 +1,595 @@
+openapi: 3.1.0
+info:
+  title: Connected Games - Identity API
+  version: 0.1.0
+  description: |
+    Users, sessions and device pairing. Every login returns a signed JWT
+    (`accessToken`) that the other services verify with the public keys published
+    at `/.well-known/jwks.json`.
+    
+    ## Session kinds
+
+    - `GUEST`: a player who scanned a table QR code and only chose a nickname;
+    - `USER`: a registered person (player, venue manager, administrator);
+    - `DEVICE`: a paired table display (kiosk).
+
+    Table QR codes are resolved by the Catalog API (`GET /tables/by-code/{code}`);
+    scanning a QR code is not a login.
+
+    ## Token lifetimes
+
+    | Session | Access token | Refresh token |
+    |---|---|---|
+    | `GUEST` | 15 minutes | 12 hours, not extended by refreshing |
+    | `USER` | 15 minutes | 30 days |
+    | `DEVICE` | 15 minutes | 90 days |
+
+    `expiresAt` and `refreshExpiresAt` in every session tell the client when each
+    token expires.
+
+    ## Refresh rotation
+
+    Every refresh returns a new refresh token and invalidates the one that was sent.
+    Sending a refresh token that was already used **revokes the whole session**, as a
+    protection against stolen tokens. Clients must therefore never send two refresh
+    requests at the same time: one refresh in flight, the other requests wait for it.
+
+    ## Access token (JWT)
+
+    Header: `alg`, `kid` (key id in the JWKS). Claims: `iss`
+    (`connected-games-identity`), `aud` (`connected-games`), `sub` (user, player or
+    device id), `kind`, `roles` (role plus optional `venueId` or `organizationId`),
+    `iat`, `exp`, `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
+
+    ## Rules
+
+    - Pairing codes have 6 characters, are valid for 10 minutes and can be used
+      once. Pairing a new display with a table replaces the previous display.
+    - Calling `POST /users` with a `GUEST` access token turns the guest into a user
+      that keeps the same `playerId`, so the match history is preserved.
+    - Public endpoints are rate limited and may answer `429` with `Retry-After`.
+    - Responses that contain tokens are sent with `Cache-Control: no-store`.
+
+    ## Out of scope for this version
+
+    Password reset and change, email verification, account deletion, multi-factor
+    authentication, listing sessions and logging out of every device, external
+    identity providers (Google), a registry of problem types, versioned URLs (the API
+    is pre-1.0 and breaking changes go through contract pull requests), request size
+    limits and CORS (handled by the gateway).
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /api/identity
+    description: Through the gateway
+security:
+  - bearerAuth: []
+tags:
+  - name: Sessions
+    description: Guest sessions, login, refresh and logout
+  - name: Users
+    description: Registration and the current user's profile
+  - name: Devices
+    description: Pairing of table displays
+  - name: Keys
+    description: Public keys used by the other services to verify tokens
+
+paths:
+  /sessions/guest:
+    post:
+      tags: [Sessions]
+      operationId: createGuestSession
+      summary: Starts a guest session with a nickname
+      description: Public, used right after scanning a table QR code without an account.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestSessionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /sessions:
+    post:
+      tags: [Sessions]
+      operationId: login
+      summary: Logs in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Wrong email or password
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /sessions/refresh:
+    post:
+      tags: [Sessions]
+      operationId: refreshSession
+      summary: Exchanges a refresh token for new access and refresh tokens
+      description: See "Refresh rotation" in the API description.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Refresh token expired, revoked or already used
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /sessions/current:
+    delete:
+      tags: [Sessions]
+      operationId: logout
+      summary: Ends the current session and revokes its refresh token
+      responses:
+        '204':
+          description: Session ended
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users:
+    post:
+      tags: [Users]
+      operationId: register
+      summary: Registers a new user and logs them in
+      description: |
+        Public. When called with a `GUEST` access token, the new user keeps the
+        guest's `playerId` and match history.
+      security:
+        - {}
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /users/me:
+    get:
+      tags: [Users]
+      operationId: getCurrentUser
+      summary: Profile and roles of the logged-in user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /devices/pairing-codes:
+    post:
+      tags: [Devices]
+      operationId: createPairingCode
+      summary: Creates a single-use code to pair a display with a table
+      description: Requires the VENUE_MANAGER role for the venue in the request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairingCodeRequest'
+      responses:
+        '201':
+          description: Pairing code created, valid for 10 minutes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairingCode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The user does not manage this venue
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /devices/pair:
+    post:
+      tags: [Devices]
+      operationId: pairDevice
+      summary: Pairs a display with the code shown in the console
+      description: The code is consumed. The display replaces any previous display of the same table.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PairDeviceRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SessionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: Pairing code unknown, expired or already used
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /.well-known/jwks.json:
+    get:
+      tags: [Keys]
+      operationId: getJwks
+      summary: Public keys to verify access tokens
+      security: []
+      responses:
+        '200':
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwkSet'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  headers:
+    NoStore:
+      description: Responses that contain tokens must not be cached
+      schema:
+        type: string
+        const: no-store
+    RetryAfter:
+      description: Seconds to wait before retrying
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    SessionCreated:
+      description: Session with its tokens
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Session'
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Missing or invalid access token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    SessionKind:
+      type: string
+      enum: [GUEST, USER, DEVICE]
+    Role:
+      type: string
+      enum: [PLAYER, VENUE_MANAGER, GAME_ADMIN, PLATFORM_ADMIN]
+    Surface:
+      type: string
+      enum: [KIOSK]
+      description: Kind of paired display. Only table displays are paired for now.
+
+    GuestSessionRequest:
+      type: object
+      required: [nickname]
+      properties:
+        nickname:
+          type: string
+          minLength: 2
+          maxLength: 24
+          examples: [Giulia]
+      additionalProperties: false
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          maxLength: 64
+      additionalProperties: false
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+      additionalProperties: false
+
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          description: At most 64 characters, so it always fits the 72 bytes read by bcrypt
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 40
+          examples: [Giulia Ferri]
+      additionalProperties: false
+
+    PairingCodeRequest:
+      type: object
+      required: [venueId, tableId, surface]
+      properties:
+        venueId:
+          type: string
+          format: uuid
+        tableId:
+          type: string
+          format: uuid
+        surface:
+          $ref: '#/components/schemas/Surface'
+      additionalProperties: false
+
+    PairingCode:
+      type: object
+      required: [code, expiresAt]
+      properties:
+        code:
+          type: string
+          pattern: '^[A-Z0-9]{6}$'
+          examples: [K7F2QX]
+        expiresAt:
+          type: string
+          format: date-time
+
+    PairDeviceRequest:
+      type: object
+      required: [pairingCode, surface]
+      properties:
+        pairingCode:
+          type: string
+          pattern: '^[A-Z0-9]{6}$'
+        surface:
+          $ref: '#/components/schemas/Surface'
+      additionalProperties: false
+
+    Session:
+      description: A session of one of the three kinds; `kind` tells which.
+      oneOf:
+        - $ref: '#/components/schemas/GuestSession'
+        - $ref: '#/components/schemas/UserSession'
+        - $ref: '#/components/schemas/DeviceSession'
+      discriminator:
+        propertyName: kind
+        mapping:
+          GUEST: '#/components/schemas/GuestSession'
+          USER: '#/components/schemas/UserSession'
+          DEVICE: '#/components/schemas/DeviceSession'
+
+    SessionBase:
+      type: object
+      required: [id, kind, accessToken, expiresAt, refreshToken, refreshExpiresAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/SessionKind'
+        accessToken:
+          type: string
+          description: 'Signed JWT, sent in the header "Authorization: Bearer <token>"'
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiry of the access token
+        refreshToken:
+          type: string
+          description: Single-use token for POST /sessions/refresh
+        refreshExpiresAt:
+          type: string
+          format: date-time
+          description: Expiry of the refresh token; after it the client must log in again
+
+    GuestSession:
+      allOf:
+        - $ref: '#/components/schemas/SessionBase'
+        - type: object
+          required: [kind, guest]
+          properties:
+            kind:
+              const: GUEST
+            guest:
+              $ref: '#/components/schemas/GuestProfile'
+
+    UserSession:
+      allOf:
+        - $ref: '#/components/schemas/SessionBase'
+        - type: object
+          required: [kind, user]
+          properties:
+            kind:
+              const: USER
+            user:
+              $ref: '#/components/schemas/User'
+
+    DeviceSession:
+      allOf:
+        - $ref: '#/components/schemas/SessionBase'
+        - type: object
+          required: [kind, device]
+          properties:
+            kind:
+              const: DEVICE
+            device:
+              $ref: '#/components/schemas/Device'
+
+    User:
+      type: object
+      required: [id, email, displayName, playerId, roles]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          examples: [Giulia Ferri]
+        playerId:
+          type: string
+          format: uuid
+          description: Player profile used in matches, tournaments and statistics
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleAssignment'
+
+    RoleAssignment:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: '#/components/schemas/Role'
+        venueId:
+          type: string
+          format: uuid
+          description: Present for VENUE_MANAGER
+        organizationId:
+          type: string
+          format: uuid
+          description: Organization (tenant) of the venue, present for VENUE_MANAGER
+
+    GuestProfile:
+      type: object
+      required: [playerId, nickname]
+      properties:
+        playerId:
+          type: string
+          format: uuid
+          description: A guest is a player without a user account
+        nickname:
+          type: string
+          examples: [Giulia]
+
+    Device:
+      type: object
+      required: [id, venueId, tableId, surface]
+      properties:
+        id:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        tableId:
+          type: string
+          format: uuid
+        surface:
+          $ref: '#/components/schemas/Surface'
+
+    JwkSet:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            description: JSON Web Key (RFC 7517)
+            additionalProperties: true
+
+    Problem:
+      type: object
+      description: Error in the RFC 9457 format (Spring ProblemDetail)
+      required: [title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
