@@ -1,14 +1,18 @@
-import { Badge, Card } from '@ui'
+import { useState } from 'react'
+import { Badge, Card, Input } from '@ui'
+import { useDataTable } from '../hooks/useConsoleQueries'
 import { AdminMetric, AdminSectionShell } from './AdminSectionShell'
 
-const tables = [
-  { name: 'Tavolo 01', game: 'Calciobalilla', status: 'Disponibile', players: '0/4' },
-  { name: 'Tavolo 02', game: 'Air Hockey', status: 'In partita', players: '2/2' },
-  { name: 'Tavolo 03', game: 'Scacchi', status: 'Disponibile', players: '0/2' },
-  { name: 'Tavolo 04', game: 'Freccette 501', status: 'Manutenzione', players: '—' },
-]
-
 export function TablesView() {
+  const [filter, setFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const tableData = useDataTable({
+    table: 'tables',
+    page,
+    pageSize: 20,
+    filters: filter.trim() === '' ? [] : [{ column: 'name', value: filter }],
+  })
+
   return (
     <AdminSectionShell title="Tavoli" description="Gestisci le postazioni e lo stato dei giochi installati.">
       <div className="grid gap-4 sm:grid-cols-3">
@@ -16,21 +20,27 @@ export function TablesView() {
         <AdminMetric label="In partita" value="4" detail="12 giocatori attivi" />
         <AdminMetric label="Utilizzo oggi" value="68%" detail="+12% rispetto a ieri" />
       </div>
+      <Input value={filter} onChange={(event) => { setFilter(event.target.value); setPage(1) }} placeholder="Filtra tavoli…" aria-label="Filtra tavoli" />
       <Card elevated className="overflow-x-auto p-0">
-        <table className="w-full min-w-[600px] text-left text-sm">
+        {tableData.isPending ? <p className="p-6">Caricamento…</p> : tableData.isError ? <p className="p-6">Impossibile caricare i tavoli.</p> : <table className="w-full min-w-[600px] text-left text-sm">
           <thead className="border-b border-[var(--cg-color-border-subtle)] text-[var(--cg-color-label-secondary)]">
             <tr><th className="p-4">Postazione</th><th className="p-4">Gioco</th><th className="p-4">Giocatori</th><th className="p-4 text-right">Stato</th></tr>
           </thead>
           <tbody>
-            {tables.map((table) => (
-              <tr key={table.name} className="border-b border-[var(--cg-color-border-subtle)] last:border-0">
-                <td className="p-4 font-semibold">{table.name}</td><td className="p-4 text-[var(--cg-color-label-secondary)]">{table.game}</td><td className="p-4 font-mono">{table.players}</td>
-                <td className="p-4 text-right"><Badge tone={table.status === 'Disponibile' ? 'success' : table.status === 'In partita' ? 'blue' : 'warning'}>{table.status}</Badge></td>
+            {tableData.data.rows.map((row) => (
+              <tr key={row.id} className="border-b border-[var(--cg-color-border-subtle)] last:border-0">
+                {tableData.data.columns.map((column) => <td key={column.key} className="p-4">{String(row.values[column.key] ?? '—')}</td>)}
+                <td className="p-4 text-right"><Badge>{row.id}</Badge></td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table>}
       </Card>
+      <div className="flex items-center justify-between text-sm">
+        <span>{tableData.data?.total ?? 0} risultati</span>
+        <button type="button" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>Pagina precedente</button>
+        <button type="button" disabled={!tableData.data || page * 20 >= tableData.data.total} onClick={() => setPage((current) => current + 1)}>Pagina successiva</button>
+      </div>
     </AdminSectionShell>
   )
 }
