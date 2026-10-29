@@ -12,8 +12,11 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
   )
 
   return (
-    <section aria-label="tabellone punti" className="p-4 rounded-lg bg-neutral-900 text-white">
-      <h2 className="text-xl font-bold mb-4">Punteggio Partita</h2>
+    <section aria-label="tabellone punti" className="cg-card cg-card-elevated">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--cg-color-accent-label)]">Punteggio live</p><h2 className="mt-1 text-xl font-bold">Punteggio Partita</h2></div>
+        <span className="cg-badge cg-badge-success">In corso</span>
+      </div>
       
       <div className="flex justify-between items-center gap-6">
         <div className="text-center">
@@ -22,13 +25,13 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
           <button
             type="button"
             onClick={() => setMatchScore(prev => prev.addPointToHome())}
-            className="mt-2 px-3 py-1 bg-blue-600 rounded text-sm hover:bg-blue-500"
+            className="cg-button cg-button-secondary mt-2 text-sm"
           >
             +1 Punto
           </button>
         </div>
 
-        <span className="text-2xl font-light text-neutral-400">VS</span>
+        <span className="text-2xl font-light text-[var(--cg-color-label-tertiary)]">VS</span>
 
         <div className="text-center">
           <p className="font-semibold">{matchScore.away.playerId}</p>
@@ -36,16 +39,16 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
           <button
             type="button"
             onClick={() => setMatchScore(prev => prev.addPointToAway())}
-            className="mt-2 px-3 py-1 bg-red-600 rounded text-sm hover:bg-red-500"
+            className="cg-button cg-button-secondary mt-2 text-sm"
           >
             +1 Punto
           </button>
         </div>
       </div>
 
-      <div className="mt-4 text-center text-sm text-neutral-400">
+      <div className="mt-5 border-t border-[var(--cg-color-border-subtle)] pt-4 text-center text-sm text-[var(--cg-color-label-secondary)]">
         Leader attuale:{' '}
-        <span data-testid="current-leader" className="font-semibold text-emerald-400">
+        <span data-testid="current-leader" className="font-semibold text-[var(--cg-color-status-success)]">
           {matchScore.leader ?? 'Pareggio'}
         </span>
       </div>
