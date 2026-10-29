@@ -1,8 +1,14 @@
 import { Link, useParams } from 'react-router'
+import { useState } from 'react'
 import { ScoreBoard } from '@match/ui/ScoreBoard'
+import { MatchEventFeed, type MatchEvent } from '@match/ui/MatchEventFeed'
 
 export function MatchView() {
   const { id = 'live-match' } = useParams()
+  const [events, setEvents] = useState<MatchEvent[]>([
+    { id: 'start', time: '20:21', message: 'Partita avviata sul Tavolo 2', tone: 'system' },
+    { id: 'ready', time: '20:22', message: 'Entrambe le squadre sono pronte', tone: 'info' },
+  ])
 
   return (
     <div className="space-y-6">
@@ -19,7 +25,15 @@ export function MatchView() {
         </Link>
       </div>
 
-      <ScoreBoard initialHomePlayer="Giocatore 1" initialAwayPlayer="Giocatore 2" />
+      <ScoreBoard
+        initialHomePlayer="Giocatore 1"
+        initialAwayPlayer="Giocatore 2"
+        onPointScored={(player, score) => setEvents((current) => [
+          { id: crypto.randomUUID(), time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }), message: `${player} ha segnato · ${score}`, tone: 'score' },
+          ...current,
+        ])}
+      />
+      <MatchEventFeed events={events} />
     </div>
   )
 }

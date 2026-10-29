@@ -4,9 +4,10 @@ import { MatchScore } from '@match/domain/Score'
 interface ScoreBoardProps {
   initialHomePlayer: string
   initialAwayPlayer: string
+  onPointScored?: (player: string, score: string) => void
 }
 
-export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardProps) {
+export function ScoreBoard({ initialHomePlayer, initialAwayPlayer, onPointScored }: ScoreBoardProps) {
   const [matchScore, setMatchScore] = useState(() =>
     MatchScore.create(initialHomePlayer, initialAwayPlayer)
   )
@@ -30,7 +31,11 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
           <p data-testid="home-points" className="mt-2 text-6xl font-black leading-none tracking-tight">{matchScore.home.points}</p>
           <button
             type="button"
-            onClick={() => setMatchScore(prev => prev.addPointToHome())}
+            onClick={() => setMatchScore(prev => {
+              const next = prev.addPointToHome()
+              onPointScored?.(initialHomePlayer, `${next.home.points}-${next.away.points}`)
+              return next
+            })}
             className="cg-button cg-button-secondary mt-4 w-full text-sm"
           >
             +1 Punto
@@ -49,7 +54,11 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
           <p data-testid="away-points" className="mt-2 text-6xl font-black leading-none tracking-tight">{matchScore.away.points}</p>
           <button
             type="button"
-            onClick={() => setMatchScore(prev => prev.addPointToAway())}
+            onClick={() => setMatchScore(prev => {
+              const next = prev.addPointToAway()
+              onPointScored?.(initialAwayPlayer, `${next.home.points}-${next.away.points}`)
+              return next
+            })}
             className="cg-button cg-button-secondary mt-4 w-full text-sm"
           >
             +1 Punto

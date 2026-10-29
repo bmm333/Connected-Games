@@ -8,6 +8,7 @@ import { LiveMatchesView } from './views/LiveMatchesView'
 import { AddHubView } from './views/AddHubView'
 import { StatisticsView } from './views/StatisticsView'
 import { ScreensContentView } from './views/ScreensContentView'
+import { SimulatorView } from './views/SimulatorView'
 import { AppShell } from '@ui'
 
 /**
@@ -27,6 +28,7 @@ export function ConsoleRouter() {
           <Route path="/devices/add" element={<AddHubView />} />
           <Route path="/statistics" element={<StatisticsView />} />
           <Route path="/screens" element={<ScreensContentView />} />
+          <Route path="/simulator" element={<SimulatorView />} />
         </Routes>
       </AppShell>
     </HashRouter>

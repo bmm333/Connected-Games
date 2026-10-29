@@ -1,10 +1,18 @@
 import { Badge, Card } from '@ui'
 import { AdminMetric, AdminSectionShell } from './AdminSectionShell'
+import { MatchEventFeed, type MatchEvent } from '@match/ui/MatchEventFeed'
 
 const matches = [
   ['Tavolo 02', 'Rossi', 'Blu', '7', '5', '12:42'],
   ['Tavolo 05', 'Pixel Masters', 'Dragon Squad', '3', '3', '08:17'],
   ['Tavolo 08', 'Marco V.', 'Giulia R.', '1', '0', '03:55'],
+]
+
+const events: MatchEvent[] = [
+  { id: 'goal-1', time: '20:24', message: 'Rossi segna · Tavolo 02 passa a 7-5', tone: 'score' },
+  { id: 'goal-2', time: '20:22', message: 'Pixel Masters pareggia · Tavolo 05', tone: 'score' },
+  { id: 'device-1', time: '20:20', message: 'Tavolo 08 connesso al broker MQTT', tone: 'system' },
+  { id: 'match-1', time: '20:18', message: 'Nuova partita avviata al Tavolo 08', tone: 'info' },
 ]
 
 export function LiveMatchesView() {
@@ -25,6 +33,7 @@ export function LiveMatchesView() {
           </Card>
         ))}
       </div>
+      <MatchEventFeed events={events} title="Feed attività venue" />
     </AdminSectionShell>
   )
 }
