@@ -11,6 +11,9 @@ const navigation: Array<{
   { label: 'Local Overview', to: '/overview', permission: 'overview:view' },
   { label: 'Tables', to: '/tables', permission: 'tables:read' },
   { label: 'Devices', to: '/devices', permission: 'devices:read' },
+  { label: 'Live matches', to: '/live', permission: 'tables:read' },
+  { label: 'Simulator', to: '/simulator', permission: 'overview:view' },
+  { label: 'Statistics', to: '/statistics', permission: 'overview:view' },
 ]
 
 export function ConsoleShellLayout() {

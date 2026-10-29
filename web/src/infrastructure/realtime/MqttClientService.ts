@@ -1,5 +1,4 @@
-import {
-  connect,
+import mqtt, {
   type IClientOptions,
   type IClientPublishOptions,
   type MqttClient,
@@ -56,7 +55,7 @@ export function createMqttClientService(): MqttClientServicePort {
         reconnectPeriod: options.reconnectPeriodMs ?? 2_000,
         clean: options.clean ?? true,
       }
-      client = connect(options.url, clientOptions)
+      client = mqtt.connect(options.url, clientOptions)
       client.on('connect', flushPending)
       client.on('message', (topic, rawPayload, packet) => {
         const message: MqttMessage = {

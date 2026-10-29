@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Badge, Card } from '@ui'
-import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
 import type { Actuator, MqttMessage, SimulationDatasetName } from '@domain/simulator'
+import type { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
 import { AdminSectionShell } from './AdminSectionShell'
 
 type DatasetTab = SimulationDatasetName
@@ -38,7 +38,15 @@ const initialActuators: Actuator[] = [
   { id: 'screen-refresh', name: 'Aggiorna display sala', type: 'trigger', value: 'idle', enabled: true, lastUpdated: new Date() },
 ]
 
-const mqttService = createMqttClientService()
+type MqttService = ReturnType<typeof createMqttClientService>
+let mqttServicePromise: Promise<MqttService> | null = null
+
+function getMqttService(): Promise<MqttService> {
+  mqttServicePromise ??= import('@infrastructure/realtime/MqttClientService').then(
+    ({ createMqttClientService }) => createMqttClientService(),
+  )
+  return mqttServicePromise
+}
 
 function formatValue(value: string) {
   return value.length > 34 ? `${value.slice(0, 34)}…` : value
@@ -58,6 +66,7 @@ export function SimulatorView() {
     setError(null)
     setMqttStatus('connecting')
     try {
+      const mqttService = await getMqttService()
       await mqttService.connect({
         url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
         clientId: `connected-games-simulator-${crypto.randomUUID()}`,
@@ -81,6 +90,7 @@ export function SimulatorView() {
       direction: 'outbound' as const,
     }
     try {
+      const mqttService = await getMqttService()
       await mqttService.publish(message.topic, message.payload, { qos: message.qos })
       setMessages((current) => [message, ...current].slice(0, 8))
     } catch (reason) {
@@ -92,6 +102,7 @@ export function SimulatorView() {
     setError(null)
     const updated = { ...actuator, value, lastUpdated: new Date() }
     setActuators((current) => current.map((item) => item.id === actuator.id ? updated : item))
+    const mqttService = await getMqttService()
     if (!mqttService.isConnected()) {
       setMessages((current) => [{
         id: crypto.randomUUID(),

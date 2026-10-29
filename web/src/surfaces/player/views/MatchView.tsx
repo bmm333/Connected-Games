@@ -1,4 +1,5 @@
 import { ScoreBoard } from '@match/ui/ScoreBoard'
+import { MatchEventFeed, type MatchEvent } from '@match/ui/MatchEventFeed'
 import { Badge } from '@ui'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
@@ -20,7 +21,20 @@ export function MatchView() {
         </div>
         <Link to="/lobby" className="cg-button cg-button-secondary text-sm">← Lobby</Link>
       </div>
-      <ScoreBoard initialHomePlayer="Giocatore 1" initialAwayPlayer="Giocatore 2" />
+      <ScoreBoard
+        initialHomePlayer="Giocatore 1"
+        initialAwayPlayer="Giocatore 2"
+        onPointScored={(player, score) => setEvents((current) => [
+          {
+            id: crypto.randomUUID(),
+            time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+            message: `${player} ha segnato · ${score}`,
+            tone: 'score',
+          },
+          ...current,
+        ])}
+      />
+      <MatchEventFeed events={events} />
       <p className="text-center text-xs text-[var(--cg-color-label-tertiary)]">I punti vengono sincronizzati automaticamente quando sei online.</p>
     </div>
   )

@@ -10,6 +10,7 @@ import { LiveMatchesView } from './views/LiveMatchesView'
 import { LocalOverviewView } from './views/LocalOverviewView'
 import { ScreensContentView } from './views/ScreensContentView'
 import { StatisticsView } from './views/StatisticsView'
+import { SimulatorView } from './views/SimulatorView'
 import { TablesView } from './views/TablesView'
 import { TournamentManagerView } from './views/TournamentManagerView'
 
@@ -60,6 +61,7 @@ export function ConsoleRouter() {
           <Route path="/devices/add" element={<RoleProtectedRoute permission="devices:write"><AddHubView /></RoleProtectedRoute>} />
           <Route path="/statistics" element={<RoleProtectedRoute permission="overview:view"><StatisticsView /></RoleProtectedRoute>} />
           <Route path="/screens" element={<RoleProtectedRoute permission="overview:view"><ScreensContentView /></RoleProtectedRoute>} />
+          <Route path="/simulator" element={<RoleProtectedRoute permission="overview:view"><SimulatorView /></RoleProtectedRoute>} />
         </Route>
       </Routes>
     </HashRouter>
