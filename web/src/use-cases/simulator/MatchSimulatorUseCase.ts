@@ -6,6 +6,7 @@ import type {
   MatchSide,
   SimulatorTable,
 } from '@domain/simulator'
+import { createUuidV7 } from '@domain/simulator'
 
 interface MatchState {
   readonly table: SimulatorTable
@@ -19,7 +20,7 @@ export interface MatchSimulatorUseCase {
   listVenues(): ReturnType<SimulatorCatalogRepository['listVenues']>
   listTables(venueId: string): Promise<readonly SimulatorTable[]>
   startMatch(table: SimulatorTable): Promise<MatchEventEnvelope>
-  scoreGoal(tableId: string, side: MatchSide): Promise<MatchEventEnvelope>
+  scoreGoal(tableId: string, side: MatchSide): Promise<readonly MatchEventEnvelope[]>
   endMatch(tableId: string, reason?: MatchEndReason): Promise<MatchEventEnvelope>
   subscribeAcks(venueId: string, onAck: (payload: unknown) => void): Promise<() => Promise<void>>
 }
@@ -37,7 +38,7 @@ export function createMatchSimulatorUseCase(
   function createEvent(state: MatchState, type: MatchEventEnvelope['type'], payload: Readonly<Record<string, unknown>>) {
     state.seq += 1
     return {
-      eventId: crypto.randomUUID(),
+      eventId: createUuidV7(),
       tenantId,
       venueId: state.table.venue.id,
       gameId: state.table.table.id,
@@ -74,7 +75,7 @@ export function createMatchSimulatorUseCase(
     async startMatch(table) {
       const state: MatchState = {
         table,
-        matchId: crypto.randomUUID(),
+        matchId: createUuidV7(),
         seq: 0,
         redScore: 0,
         blueScore: 0,
@@ -94,11 +95,22 @@ export function createMatchSimulatorUseCase(
       if (!state) throw new Error('No active match for this table')
       if (side === 'RED') state.redScore += 1
       else state.blueScore += 1
-      return publish(state, createEvent(state, 'GoalScored', { side }))
+      const events = [await publish(state, createEvent(state, 'GoalScored', { side }))]
+      if (state.redScore >= state.table.gameType.pointsToWin ||
+        state.blueScore >= state.table.gameType.pointsToWin) {
+        events.push(await finishMatch(state, 'SCORE_REACHED'))
+      }
+      return events
     },
     async endMatch(tableId, reason = 'CANCELLED') {
       const state = matches.get(tableId)
       if (!state) throw new Error('No active match for this table')
+      return finishMatch(state, reason)
+    },
+    subscribeAcks: (venueId, onAck) => publisher.subscribeAck(venueId, onAck),
+  }
+
+  async function finishMatch(state: MatchState, reason: MatchEndReason) {
       const winnerSide = state.redScore === state.blueScore
         ? undefined
         : state.redScore > state.blueScore ? 'RED' : 'BLUE'
@@ -108,11 +120,9 @@ export function createMatchSimulatorUseCase(
           { side: 'RED', score: state.redScore },
           { side: 'BLUE', score: state.blueScore },
         ],
-        ...(winnerSide ? { winnerSide } : {}),
+        ...(reason !== 'CANCELLED' && winnerSide ? { winnerSide } : {}),
       })
-      matches.delete(tableId)
+      matches.delete(state.table.table.id)
       return publish(state, event)
-    },
-    subscribeAcks: (venueId, onAck) => publisher.subscribeAck(venueId, onAck),
   }
 }

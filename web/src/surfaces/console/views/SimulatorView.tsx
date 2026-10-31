@@ -4,6 +4,7 @@ import type {
   MatchSide,
   SimulatorTable,
 } from '@domain/simulator'
+import { createUuidV7 } from '@domain/simulator'
 import { Badge, Card } from '@ui'
 import { useConsoleDependencies } from '../dependencies'
 import { AdminSectionShell } from './AdminSectionShell'
@@ -58,7 +59,7 @@ export function SimulatorView() {
     try {
       await simulator.mqtt.connect({
         url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
-        clientId: `connected-games-simulator-${crypto.randomUUID()}`,
+        clientId: `connected-games-simulator-${createUuidV7()}`,
       })
       if (venueId) {
         await simulator.matches.subscribeAcks(venueId, (payload) => {
@@ -72,11 +73,19 @@ export function SimulatorView() {
     }
   }
 
-  async function publish(action: () => Promise<MatchEventEnvelope>) {
+  async function publish(action: () => Promise<MatchEventEnvelope | readonly MatchEventEnvelope[]>) {
     setError(null)
     try {
-      const event = await action()
-      setEvents((current) => [event, ...current].slice(0, 12))
+      const result = await action()
+      const published = Array.isArray(result) ? result : [result]
+      setEvents((current) => [...published.reverse(), ...current].slice(0, 12))
+      if (published.some((event) => event.type === 'MatchEnded')) {
+        setActiveTables((current) => {
+          const next = new Set(current)
+          published.forEach((event) => next.delete(event.gameId))
+          return next
+        })
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Pubblicazione evento non riuscita')
     }
