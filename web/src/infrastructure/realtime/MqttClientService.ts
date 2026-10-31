@@ -4,12 +4,31 @@ import mqtt, {
   type MqttClient,
 } from 'mqtt'
 import type {
-  MqttClientService as MqttClientServicePort,
   MqttConnectionOptions,
   MqttMessage,
   MqttPayload,
+  MqttPublishOptions,
   MqttSubscription,
-} from '@domain/simulator'
+} from './MqttMessage'
+
+export interface MqttClientService {
+  connect(options: MqttConnectionOptions): Promise<void>
+
+  disconnect(): Promise<void>
+
+  publish(
+    topic: string,
+    payload: MqttPayload,
+    options?: MqttPublishOptions,
+  ): Promise<void>
+
+  subscribe(
+    topic: string,
+    handler: (message: MqttMessage) => void,
+  ): Promise<MqttSubscription>
+
+  isConnected(): boolean
+}
 
 type MessageHandler = (message: MqttMessage) => void
 const MAX_PENDING_PUBLISHES = 1_000
@@ -27,7 +46,7 @@ function encodePayload(payload: MqttPayload): string {
   return encoded
 }
 
-export function createMqttClientService(): MqttClientServicePort {
+export function createMqttClientService(): MqttClientService {
   let client: MqttClient | null = null
   const handlers = new Map<string, Set<MessageHandler>>()
   const pendingPublishes: Array<{

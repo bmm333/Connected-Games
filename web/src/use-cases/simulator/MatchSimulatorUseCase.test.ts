@@ -12,7 +12,14 @@ const table: SimulatorTable = {
     gameTypeId: 'game-1',
     status: 'FREE',
   },
-  venue: { id: 'venue-1', name: 'Venue', city: 'Rome', type: 'PUBLIC' },
+  venue: {
+    id: 'venue-1',
+    name: 'Venue',
+    city: 'Rome',
+    type: 'PUBLIC',
+    address: 'Via Roma 1',
+    organizationId: 'org-1',
+  },
   gameType: {
     id: 'game-1',
     name: 'Foosball',
@@ -24,14 +31,21 @@ const table: SimulatorTable = {
 
 function createSimulator() {
   const published: MatchEventEnvelope[] = []
+  const topics: string[] = []
   const catalog: SimulatorCatalogRepository = {
     resolveTableByCode: vi.fn(),
     listVenues: vi.fn().mockResolvedValue([table.venue]),
-    listTables: vi.fn().mockResolvedValue([table.table]),
+    getVenue: vi.fn().mockResolvedValue(table.venue),
+    listTables: vi.fn().mockResolvedValue([
+      table.table,
+      { ...table.table, id: 'table-2', gameTypeId: 'unknown-game' },
+    ]),
     listGameTypes: vi.fn().mockResolvedValue([table.gameType]),
   }
   const publisher: MatchEventPublisher = {
-    publish: vi.fn(async (_topic, event) => {
+    connect: vi.fn(),
+    publish: vi.fn(async (topic, event) => {
+      topics.push(topic)
       published.push(event)
     }),
     subscribeAck: vi.fn(),
@@ -39,10 +53,39 @@ function createSimulator() {
   return {
     simulator: createMatchSimulatorUseCase(catalog, publisher),
     published,
+    topics,
   }
 }
 
 describe('MatchSimulatorUseCase', () => {
+  it('lists the tables of a venue with their game type', async () => {
+    const { simulator } = createSimulator()
+
+    const tables = await simulator.listTables('venue-1')
+
+    expect(tables).toEqual([table])
+  })
+
+  it('publishes on the match topic with seq from 1 and the venue organization as tenant', async () => {
+    const { simulator, published, topics } = createSimulator()
+
+    const started = await simulator.startMatch(table)
+    await simulator.scoreGoal(table.table.id, 'BLUE')
+
+    expect(topics).toEqual([
+      `venues/venue-1/games/table-1/matches/${started.matchId}/events`,
+      `venues/venue-1/games/table-1/matches/${started.matchId}/events`,
+    ])
+    expect(published.map((event) => event.seq)).toEqual([1, 2])
+    expect(started).toMatchObject({
+      tenantId: 'org-1',
+      venueId: 'venue-1',
+      gameId: 'table-1',
+      source: 'EMULATED',
+      payload: { mode: 'INDIVIDUAL', pointsToWin: 2 },
+    })
+  })
+
   it('ends automatically at pointsToWin and rejects further goals', async () => {
     const { simulator, published } = createSimulator()
 
