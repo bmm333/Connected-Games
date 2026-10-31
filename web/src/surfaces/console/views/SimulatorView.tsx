@@ -4,7 +4,6 @@ import type {
   MatchSide,
   SimulatorTable,
 } from '@domain/simulator'
-import { createUuidV7 } from '@domain/simulator'
 import { Badge, Card } from '@ui'
 import { useConsoleDependencies } from '../dependencies'
 import { AdminSectionShell } from './AdminSectionShell'
@@ -22,7 +21,7 @@ export function SimulatorView() {
 
   useEffect(() => {
     let cancelled = false
-    void simulator.matches.listVenues()
+    void simulator.listVenues()
       .then((loadedVenues) => {
         if (cancelled) return
         setVenues(loadedVenues)
@@ -34,14 +33,14 @@ export function SimulatorView() {
     return () => {
       cancelled = true
     }
-  }, [simulator.matches])
+  }, [simulator])
 
   useEffect(() => {
     if (!venueId) {
       return
     }
     let cancelled = false
-    void simulator.matches.listTables(venueId)
+    void simulator.listTables(venueId)
       .then((loadedTables) => {
         if (!cancelled) setTables(loadedTables)
       })
@@ -51,18 +50,15 @@ export function SimulatorView() {
     return () => {
       cancelled = true
     }
-  }, [simulator.matches, venueId])
+  }, [simulator, venueId])
 
   async function connectMqtt() {
     setError(null)
     setMqttStatus('connecting')
     try {
-      await simulator.mqtt.connect({
-        url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
-        clientId: `connected-games-simulator-${createUuidV7()}`,
-      })
+      await simulator.connect()
       if (venueId) {
-        await simulator.matches.subscribeAcks(venueId, (payload) => {
+        await simulator.subscribeAcks(venueId, (payload) => {
           setAcks((current) => [JSON.stringify(payload), ...current].slice(0, 8))
         })
       }
@@ -78,7 +74,7 @@ export function SimulatorView() {
     try {
       const result = await action()
       const published = Array.isArray(result) ? result : [result]
-      setEvents((current) => [...published.reverse(), ...current].slice(0, 12))
+      setEvents((current) => [...published.toReversed(), ...current].slice(0, 12))
       if (published.some((event) => event.type === 'MatchEnded')) {
         setActiveTables((current) => {
           const next = new Set(current)
@@ -93,19 +89,19 @@ export function SimulatorView() {
 
   function startMatch(table: SimulatorTable) {
     void publish(async () => {
-      const event = await simulator.matches.startMatch(table)
+      const event = await simulator.startMatch(table)
       setActiveTables((current) => new Set(current).add(table.table.id))
       return event
     })
   }
 
   function scoreGoal(tableId: string, side: MatchSide) {
-    void publish(() => simulator.matches.scoreGoal(tableId, side))
+    void publish(() => simulator.scoreGoal(tableId, side))
   }
 
   function endMatch(tableId: string) {
     void publish(async () => {
-      const event = await simulator.matches.endMatch(tableId, 'CANCELLED')
+      const event = await simulator.endMatch(tableId, 'CANCELLED')
       setActiveTables((current) => {
         const next = new Set(current)
         next.delete(tableId)
@@ -152,7 +148,7 @@ export function SimulatorView() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {!active && <button type="button" className="cg-button cg-button-primary text-sm" onClick={() => startMatch(table)}>Start match</button>}
-              {active && <><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'RED')}>Goal red</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'BLUE')}>Goal blue</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => endMatch(table.table.id)}>End match</button></>}
+              {active && <><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'RED')}>Goal red</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'BLUE')}>Goal blue</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => endMatch(table.table.id)}>Cancel match</button></>}
             </div>
           </div>
         })}</div>}

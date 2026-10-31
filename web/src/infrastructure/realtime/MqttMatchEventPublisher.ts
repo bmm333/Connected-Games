@@ -1,13 +1,13 @@
-import type {
-  MatchEventEnvelope,
-  MatchEventPublisher,
-  MqttClientService,
-} from '@domain/simulator'
+import type { MatchEventPublisher } from '@domain/simulator'
+import type { MqttClientService } from './MqttClientService'
+import type { MqttConnectionOptions } from './MqttMessage'
 
 export function createMqttMatchEventPublisher(
   service: MqttClientService,
+  connection: MqttConnectionOptions,
 ): MatchEventPublisher {
   return {
+    connect: () => service.connect(connection),
     async publish(topic, event) {
       await service.publish(topic, JSON.stringify(event), { qos: 1, retain: false })
     },
@@ -26,5 +26,3 @@ export function createMqttMatchEventPublisher(
     },
   }
 }
-
-export type { MatchEventEnvelope }

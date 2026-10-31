@@ -17,6 +17,7 @@ interface MatchState {
 }
 
 export interface MatchSimulatorUseCase {
+  connect(): Promise<void>
   listVenues(): ReturnType<SimulatorCatalogRepository['listVenues']>
   listTables(venueId: string): Promise<readonly SimulatorTable[]>
   startMatch(table: SimulatorTable): Promise<MatchEventEnvelope>
@@ -31,7 +32,6 @@ const topicFor = (table: SimulatorTable, matchId: string) =>
 export function createMatchSimulatorUseCase(
   catalog: SimulatorCatalogRepository,
   publisher: MatchEventPublisher,
-  tenantId = import.meta.env.VITE_TENANT_ID ?? 'local-tenant',
 ): MatchSimulatorUseCase {
   const matches = new Map<string, MatchState>()
 
@@ -39,7 +39,8 @@ export function createMatchSimulatorUseCase(
     state.seq += 1
     return {
       eventId: createUuidV7(),
-      tenantId,
+      // The tenant is the organization that owns the venue (contracts/asyncapi)
+      tenantId: state.table.venue.organizationId,
       venueId: state.table.venue.id,
       gameId: state.table.table.id,
       matchId: state.matchId,
@@ -57,16 +58,15 @@ export function createMatchSimulatorUseCase(
   }
 
   return {
+    connect: () => publisher.connect(),
     listVenues: () => catalog.listVenues(),
     async listTables(venueId) {
-      const [venues, tables, gameTypes] = await Promise.all([
-        catalog.listVenues(),
+      const [venue, tables, gameTypes] = await Promise.all([
+        catalog.getVenue(venueId),
         catalog.listTables(venueId),
         catalog.listGameTypes(),
       ])
       const gameTypesById = new Map(gameTypes.map((gameType) => [gameType.id, gameType]))
-      const venue = venues.find((item) => item.id === venueId)
-      if (!venue) throw new Error(`Venue not found: ${venueId}`)
       return tables.flatMap((table) => {
         const gameType = gameTypesById.get(table.gameTypeId)
         return gameType ? [{ table, venue, gameType }] : []
@@ -111,18 +111,18 @@ export function createMatchSimulatorUseCase(
   }
 
   async function finishMatch(state: MatchState, reason: MatchEndReason) {
-      const winnerSide = state.redScore === state.blueScore
-        ? undefined
-        : state.redScore > state.blueScore ? 'RED' : 'BLUE'
-      const event = createEvent(state, 'MatchEnded', {
-        reason,
-        finalScore: [
-          { side: 'RED', score: state.redScore },
-          { side: 'BLUE', score: state.blueScore },
-        ],
-        ...(reason !== 'CANCELLED' && winnerSide ? { winnerSide } : {}),
-      })
-      matches.delete(state.table.table.id)
-      return publish(state, event)
+    const winnerSide = state.redScore === state.blueScore
+      ? undefined
+      : state.redScore > state.blueScore ? 'RED' : 'BLUE'
+    const event = createEvent(state, 'MatchEnded', {
+      reason,
+      finalScore: [
+        { side: 'RED', score: state.redScore },
+        { side: 'BLUE', score: state.blueScore },
+      ],
+      ...(reason !== 'CANCELLED' && winnerSide ? { winnerSide } : {}),
+    })
+    matches.delete(state.table.table.id)
+    return publish(state, event)
   }
 }
