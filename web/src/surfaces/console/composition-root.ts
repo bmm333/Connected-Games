@@ -22,6 +22,10 @@ import { createLogoutUseCase } from '@use-cases/console-auth/LogoutUseCase'
 import { createGetUserPermissionsUseCase } from '@use-cases/console-auth/GetUserPermissionsUseCase'
 import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/ValidateRouteAccessUseCase'
 import type { UserSession } from '@domain/console/auth/UserSession'
+import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
+import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
+import { createMqttMatchEventPublisher } from '@infrastructure/realtime/MqttMatchEventPublisher'
+import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -31,6 +35,10 @@ export interface ConsoleDependencies {
   tableData: ReturnType<typeof createFetchTableDataUseCase>
   devices: ReturnType<typeof createGetDevicesStatusUseCase>
   executeDeviceCommand: ReturnType<typeof createExecuteDeviceCommandUseCase>
+  simulator: {
+    mqtt: ReturnType<typeof createMqttClientService>
+    matches: ReturnType<typeof createMatchSimulatorUseCase>
+  }
   consoleAuth: {
     sessionStore: ReturnType<typeof createConsoleSessionStore>
     login: ReturnType<typeof createLoginWithRoleUseCase>
@@ -53,6 +61,8 @@ export function createConsoleDependencies(): ConsoleDependencies {
     createHttpConsoleAuthApiClient(),
     consoleSessionStore,
   )
+  const mqtt = createMqttClientService()
+  const catalogRepository = createCatalogRepository()
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),
@@ -65,6 +75,13 @@ export function createConsoleDependencies(): ConsoleDependencies {
     tableData: createFetchTableDataUseCase(tableDataRepository),
     devices: createGetDevicesStatusUseCase(deviceRepository),
     executeDeviceCommand: createExecuteDeviceCommandUseCase(deviceRepository),
+    simulator: {
+      mqtt,
+      matches: createMatchSimulatorUseCase(
+        catalogRepository,
+        createMqttMatchEventPublisher(mqtt),
+      ),
+    },
     consoleAuth: {
       sessionStore: consoleSessionStore,
       login: createLoginWithRoleUseCase(

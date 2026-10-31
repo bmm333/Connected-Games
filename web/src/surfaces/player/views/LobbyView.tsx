@@ -1,6 +1,6 @@
-import { Link } from 'react-router'
 import { useNetworkStatus } from '@shared/offline/useNetworkStatus'
 import { Badge, Card } from '@ui'
+import { Link } from 'react-router'
 
 export function LobbyView() {
   const isOnline = useNetworkStatus()

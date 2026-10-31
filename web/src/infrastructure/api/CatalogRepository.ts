@@ -1,5 +1,5 @@
 import createClient from 'openapi-fetch'
-import type { CatalogRepository } from '@domain/catalog/CatalogRepository'
+import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
 import type { TableLookup } from '@domain/catalog/TableLookup'
 import type { paths } from './generated/catalog'
 
@@ -15,7 +15,7 @@ function mapTableLookup(dto: TableLookupDto): TableLookup {
 
 export function createCatalogRepository(
   baseUrl = import.meta.env.VITE_API_URL ?? '/api/catalog',
-): CatalogRepository {
+): SimulatorCatalogRepository {
   const client = createClient<paths>({ baseUrl })
 
   return {
@@ -31,6 +31,29 @@ export function createCatalogRepository(
       }
 
       return mapTableLookup(result.data)
+    },
+    async listVenues() {
+      const result = await client.GET('/venues')
+      if (result.error !== undefined) {
+        throw new Error(`Unable to list venues (HTTP ${result.response.status})`)
+      }
+      return result.data
+    },
+    async listTables(venueId) {
+      const result = await client.GET('/venues/{venueId}/tables', {
+        params: { path: { venueId } },
+      })
+      if (result.error !== undefined) {
+        throw new Error(`Unable to list venue tables (HTTP ${result.response.status})`)
+      }
+      return result.data
+    },
+    async listGameTypes() {
+      const result = await client.GET('/game-types')
+      if (result.error !== undefined) {
+        throw new Error(`Unable to list game types (HTTP ${result.response.status})`)
+      }
+      return result.data
     },
   }
 }
