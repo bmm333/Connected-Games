@@ -26,6 +26,7 @@ import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
 import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
 import { createMqttMatchEventPublisher } from '@infrastructure/realtime/MqttMatchEventPublisher'
 import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
+import { createUuidV7 } from '@domain/simulator'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -35,10 +36,7 @@ export interface ConsoleDependencies {
   tableData: ReturnType<typeof createFetchTableDataUseCase>
   devices: ReturnType<typeof createGetDevicesStatusUseCase>
   executeDeviceCommand: ReturnType<typeof createExecuteDeviceCommandUseCase>
-  simulator: {
-    mqtt: ReturnType<typeof createMqttClientService>
-    matches: ReturnType<typeof createMatchSimulatorUseCase>
-  }
+  simulator: ReturnType<typeof createMatchSimulatorUseCase>
   consoleAuth: {
     sessionStore: ReturnType<typeof createConsoleSessionStore>
     login: ReturnType<typeof createLoginWithRoleUseCase>
@@ -61,7 +59,6 @@ export function createConsoleDependencies(): ConsoleDependencies {
     createHttpConsoleAuthApiClient(),
     consoleSessionStore,
   )
-  const mqtt = createMqttClientService()
   const catalogRepository = createCatalogRepository()
 
   return {
@@ -75,13 +72,13 @@ export function createConsoleDependencies(): ConsoleDependencies {
     tableData: createFetchTableDataUseCase(tableDataRepository),
     devices: createGetDevicesStatusUseCase(deviceRepository),
     executeDeviceCommand: createExecuteDeviceCommandUseCase(deviceRepository),
-    simulator: {
-      mqtt,
-      matches: createMatchSimulatorUseCase(
-        catalogRepository,
-        createMqttMatchEventPublisher(mqtt),
-      ),
-    },
+    simulator: createMatchSimulatorUseCase(
+      catalogRepository,
+      createMqttMatchEventPublisher(createMqttClientService(), {
+        url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
+        clientId: `connected-games-simulator-${createUuidV7()}`,
+      }),
+    ),
     consoleAuth: {
       sessionStore: consoleSessionStore,
       login: createLoginWithRoleUseCase(

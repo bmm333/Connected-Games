@@ -1,4 +1,4 @@
-import type { GameType, Table, VenueSummary } from '@domain/catalog/TableLookup'
+import type { GameType, Table, Venue } from '@domain/catalog/TableLookup'
 
 export type MatchSide = 'RED' | 'BLUE'
 export type MatchEventType = 'MatchStarted' | 'GoalScored' | 'MatchEnded'
@@ -19,11 +19,12 @@ export interface MatchEventEnvelope {
 
 export interface SimulatorTable {
   readonly table: Table
-  readonly venue: VenueSummary
+  readonly venue: Venue
   readonly gameType: GameType
 }
 
 export interface MatchEventPublisher {
+  connect(): Promise<void>
   publish(topic: string, event: MatchEventEnvelope): Promise<void>
   subscribeAck(venueId: string, onAck: (payload: unknown) => void): Promise<() => Promise<void>>
 }

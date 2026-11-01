@@ -39,6 +39,15 @@ export function createCatalogRepository(
       }
       return result.data
     },
+    async getVenue(venueId) {
+      const result = await client.GET('/venues/{venueId}', {
+        params: { path: { venueId } },
+      })
+      if (result.error !== undefined) {
+        throw new Error(`Unable to load venue (HTTP ${result.response.status})`)
+      }
+      return result.data
+    },
     async listTables(venueId) {
       const result = await client.GET('/venues/{venueId}/tables', {
         params: { path: { venueId } },
