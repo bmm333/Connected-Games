@@ -2,7 +2,6 @@ package com.connectedgames.identity.application;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import com.connectedgames.identity.application.port.in.CreateGuestSessionUseCase;
@@ -15,8 +14,6 @@ import com.connectedgames.identity.domain.guest.Nickname;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.session.SessionId;
 import com.connectedgames.identity.domain.session.SessionKind;
-import com.connectedgames.identity.domain.user.Role;
-import com.connectedgames.identity.domain.user.RoleAssignment;
 
 public final class CreateGuestSessionService implements CreateGuestSessionUseCase
 {
@@ -47,6 +44,6 @@ public final class CreateGuestSessionService implements CreateGuestSessionUseCas
                 guest.playerId().value(),now);
         sessions.save(session);
 
-        return new GuestSession(guest,tokens.issue(session,List.of(RoleAssignment.of(Role.PLAYER)),now));
+        return new GuestSession(guest,tokens.issue(session,SessionTokens.GUEST_ROLES,now));
     }
 }

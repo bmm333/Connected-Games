@@ -22,4 +22,6 @@ class InMemorySessionRepository implements SessionRepository {
     {
         return Optional.ofNullable(sessions.get(id));
     }
+
+    int count() { return sessions.size(); }
 }

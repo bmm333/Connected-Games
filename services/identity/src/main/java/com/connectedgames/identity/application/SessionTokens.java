@@ -10,11 +10,14 @@ import com.connectedgames.identity.application.port.out.RefreshTokenGenerator;
 import com.connectedgames.identity.application.port.out.RefreshTokenRepository;
 import com.connectedgames.identity.domain.session.RefreshToken;
 import com.connectedgames.identity.domain.session.Session;
+import com.connectedgames.identity.domain.user.Role;
 import com.connectedgames.identity.domain.user.RoleAssignment;
 
 /** Issues a new token pair for a session: shared by guest sessions, login and refresh */
 public final class SessionTokens
 {
+    static final List<RoleAssignment> GUEST_ROLES=List.of(RoleAssignment.of(Role.PLAYER));
+
     private final RefreshTokenRepository refreshTokens;
     private final RefreshTokenGenerator tokenGenerator;
     private final AccessTokenIssuer accessTokens;
