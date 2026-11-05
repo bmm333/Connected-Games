@@ -5,5 +5,5 @@ import com.connectedgames.identity.domain.guest.Nickname;
 /** Session for whoever scans a table QR code and plays without an account */
 public interface CreateGuestSessionUseCase {
 
-    IssuedSession createGuestSession(Nickname nickname);
+    GuestSession createGuestSession(Nickname nickname);
 }
