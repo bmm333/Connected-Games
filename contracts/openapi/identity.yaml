@@ -38,8 +38,9 @@ info:
 
     Header: `alg`, `kid` (key id in the JWKS). Claims: `iss`
     (`connected-games-identity`), `aud` (`connected-games`), `sub` (user, player or
-    device id), `kind`, `roles` (role plus optional `venueId` or `organizationId`),
-    `iat`, `exp`, `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
+    device id), `sid` (session id, used by logout and by a guest that registers),
+    `kind`, `roles` (role plus optional `venueId` or `organizationId`), `iat`, `exp`,
+    `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
 
     ## Rules
 
@@ -206,6 +207,12 @@ paths:
                 $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: The token is not of a USER session (guests and devices have no profile)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /devices/pairing-codes:
     post:
