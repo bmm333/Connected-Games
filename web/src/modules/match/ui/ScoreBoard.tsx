@@ -1,12 +1,13 @@
-import { useState } from 'react'
 import { MatchScore } from '@match/domain/Score'
+import { useState } from 'react'
 
 interface ScoreBoardProps {
   initialHomePlayer: string
   initialAwayPlayer: string
+  onPointScored?: (player: string, score: string) => void
 }
 
-export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardProps) {
+export function ScoreBoard({ initialHomePlayer, initialAwayPlayer, onPointScored }: ScoreBoardProps) {
   const [matchScore, setMatchScore] = useState(() =>
     MatchScore.create(initialHomePlayer, initialAwayPlayer)
   )
@@ -21,10 +22,14 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
       <div className="flex justify-between items-center gap-6">
         <div className="text-center">
           <p className="font-semibold">{matchScore.home.playerId}</p>
-          <p data-testid="home-points" className="text-3xl font-mono">{matchScore.home.points}</p>
+          <p data-testid="home-points" className="mt-2 text-6xl font-black leading-none tracking-tight">{matchScore.home.points}</p>
           <button
             type="button"
-            onClick={() => setMatchScore(prev => prev.addPointToHome())}
+            onClick={() => {
+              const next = matchScore.addPointToHome()
+              setMatchScore(next)
+              onPointScored?.(initialHomePlayer, `${next.home.points}-${next.away.points}`)
+            }}
             className="cg-button cg-button-secondary mt-2 text-sm"
           >
             +1 Punto
@@ -35,10 +40,14 @@ export function ScoreBoard({ initialHomePlayer, initialAwayPlayer }: ScoreBoardP
 
         <div className="text-center">
           <p className="font-semibold">{matchScore.away.playerId}</p>
-          <p data-testid="away-points" className="text-3xl font-mono">{matchScore.away.points}</p>
+          <p data-testid="away-points" className="mt-2 text-6xl font-black leading-none tracking-tight">{matchScore.away.points}</p>
           <button
             type="button"
-            onClick={() => setMatchScore(prev => prev.addPointToAway())}
+            onClick={() => {
+              const next = matchScore.addPointToAway()
+              setMatchScore(next)
+              onPointScored?.(initialAwayPlayer, `${next.home.points}-${next.away.points}`)
+            }}
             className="cg-button cg-button-secondary mt-2 text-sm"
           >
             +1 Punto

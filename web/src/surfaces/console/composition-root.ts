@@ -22,6 +22,11 @@ import { createLogoutUseCase } from '@use-cases/console-auth/LogoutUseCase'
 import { createGetUserPermissionsUseCase } from '@use-cases/console-auth/GetUserPermissionsUseCase'
 import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/ValidateRouteAccessUseCase'
 import type { UserSession } from '@domain/console/auth/UserSession'
+import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
+import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
+import { createMqttMatchEventPublisher } from '@infrastructure/realtime/MqttMatchEventPublisher'
+import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
+import { createUuidV7 } from '@domain/simulator'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -31,6 +36,7 @@ export interface ConsoleDependencies {
   tableData: ReturnType<typeof createFetchTableDataUseCase>
   devices: ReturnType<typeof createGetDevicesStatusUseCase>
   executeDeviceCommand: ReturnType<typeof createExecuteDeviceCommandUseCase>
+  simulator: ReturnType<typeof createMatchSimulatorUseCase>
   consoleAuth: {
     sessionStore: ReturnType<typeof createConsoleSessionStore>
     login: ReturnType<typeof createLoginWithRoleUseCase>
@@ -53,6 +59,7 @@ export function createConsoleDependencies(): ConsoleDependencies {
     createHttpConsoleAuthApiClient(),
     consoleSessionStore,
   )
+  const catalogRepository = createCatalogRepository()
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),
@@ -65,6 +72,13 @@ export function createConsoleDependencies(): ConsoleDependencies {
     tableData: createFetchTableDataUseCase(tableDataRepository),
     devices: createGetDevicesStatusUseCase(deviceRepository),
     executeDeviceCommand: createExecuteDeviceCommandUseCase(deviceRepository),
+    simulator: createMatchSimulatorUseCase(
+      catalogRepository,
+      createMqttMatchEventPublisher(createMqttClientService(), {
+        url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
+        clientId: `connected-games-simulator-${createUuidV7()}`,
+      }),
+    ),
     consoleAuth: {
       sessionStore: consoleSessionStore,
       login: createLoginWithRoleUseCase(

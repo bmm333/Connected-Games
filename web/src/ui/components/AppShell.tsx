@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router'
-import { BarChart3, Gamepad2, LayoutDashboard, Monitor, Settings, Trophy, Users } from 'lucide-react'
+import { BarChart3, Cpu, Gamepad2, LayoutDashboard, Monitor, Settings, Trophy, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -18,6 +18,7 @@ const navigation: Record<AppSurface, NavItem[]> = {
     { label: 'Partite live', to: '/live', icon: Monitor },
     { label: 'Tornei', to: '/tournaments', icon: Trophy },
     { label: 'Dispositivi', to: '/devices', icon: Settings },
+    { label: 'Simulator', to: '/simulator', icon: Cpu },
     { label: 'Statistiche', to: '/statistics', icon: BarChart3 },
   ],
   player: [
