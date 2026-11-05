@@ -5,6 +5,10 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * A login renewed through refresh tokens. subjectId is the user, player or device id depending on kind,
+ * and becomes the sub claim of the access token
+ * */
 public record Session(SessionId id,SessionKind kind,UUID subjectId,Instant startedAt, Instant refreshExpiresAt,Instant revokedAt) {
 
     public static final Duration ACCESS_TOKEN_LIFETIME = Duration.ofMinutes(15);
@@ -13,7 +17,7 @@ public record Session(SessionId id,SessionKind kind,UUID subjectId,Instant start
         Objects.requireNonNull(kind,"kind");
         Objects.requireNonNull(subjectId,"subjectId");
         Objects.requireNonNull(startedAt,"startedAt");
-        Objects.requireNonNull(refreshExpiresAt,"refresExpiresAt");
+        Objects.requireNonNull(refreshExpiresAt,"refreshExpiresAt");
         if(!refreshExpiresAt.isAfter(startedAt)){
             throw new IllegalArgumentException("Refresh cannot expire before starting");
         }
@@ -27,6 +31,7 @@ public record Session(SessionId id,SessionKind kind,UUID subjectId,Instant start
     {
        return  revokedAt==null && now.isBefore(refreshExpiresAt);
     }
+    /** A guest session keeps its expiry: refreshing it only renews the access token */
     public Session refreshed(Instant now)
     {
         if(!isActive(now))

@@ -2,6 +2,7 @@ package com.connectedgames.identity.domain.session;
 
 import java.time.Duration;
 
+/** How long each kind of session can be renewed; a guest session is never extended, so it ends the same night */
 public enum SessionKind{
     GUEST(Duration.ofHours(12),false),
     USER(Duration.ofDays(30),true),
