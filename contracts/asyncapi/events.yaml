@@ -16,13 +16,15 @@ servers:
 
 channels:
   matchEvents:
-    address: 'venues/{venueId}/games/{gameId}/matches/{matchId}/events'
-    description: Events of a match, in sequence order
+    address: 'venues/{venueId}/tables/{tableId}/matches/{matchId}/events'
+    description: |
+      Events of a match, in sequence order. The cloud rejects an event whose venueId, tableId
+      or matchId differ from the ones in the topic, so a hub cannot write for another venue.
     parameters:
       venueId:
         description: Locale
-      gameId:
-        description: Table inside local
+      tableId:
+        description: Table inside the venue
       matchId:
         description: Match
     messages:
@@ -34,7 +36,9 @@ channels:
         $ref: '#/components/messages/MatchEnded'
   hubAck:
     address: 'venues/{venueId}/hub/ack'
-    description: Cloud acknowledges the events received from the hub
+    description: |
+      Cloud acknowledges the events received from the hub. It is sent after the events are saved,
+      never before: MQTT QoS 1 only says that the broker has the message, not that the cloud stored it.
     parameters:
       venueId:
         description: Locale
