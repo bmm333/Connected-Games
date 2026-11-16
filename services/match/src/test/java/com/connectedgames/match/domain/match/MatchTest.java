@@ -1,6 +1,7 @@
 package com.connectedgames.match.domain.match;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +37,16 @@ class MatchTest {
                 List.of(new SideScore(RED, red), new SideScore(BLUE, blue)), red > blue ? RED : BLUE);
     }
 
+    private static MatchEnded cancelled(int seq) {
+        return new MatchEnded(newId(), VENUE, TABLE, MATCH, seq, NOW, EndReason.CANCELLED,
+                List.of(new SideScore(RED, 0), new SideScore(BLUE, 0)), null);
+    }
+
+    private static MatchEnded drawAfterTime(int seq) {
+        return new MatchEnded(newId(), VENUE, TABLE, MATCH, seq, NOW, EndReason.TIME_EXPIRED,
+                List.of(new SideScore(RED, 2), new SideScore(BLUE, 2)), null);
+    }
+
     @Test
     void theOrderOfArrivalDoesNotMatter() {
         List<MatchEvent> inOrder = List.of(started(1), goal(2, RED), goal(3, BLUE), goal(4, RED));
@@ -55,5 +66,115 @@ class MatchTest {
 
         assertThat(match.scoreOf(RED)).isEqualTo(5);
         assertThat(match.scoreOf(BLUE)).isEqualTo(3);
+    }
+
+    @Test
+    void startsInProgressAtZero() {
+        Match match = Match.replay(List.of(started(1))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.IN_PROGRESS);
+        assertThat(match.scoreOf(RED)).isZero();
+        assertThat(match.scoreOf(BLUE)).isZero();
+        assertThat(match.startedAt()).isEqualTo(NOW);
+        assertThat(match.endedAt()).isNull();
+        assertThat(match.winnerSide()).isNull();
+    }
+
+    @Test
+    void aGoalCountsOnlyForItsSide() {
+        Match match = Match.replay(List.of(started(1), goal(2, RED), goal(3, RED), goal(4, BLUE))).orElseThrow();
+
+        assertThat(match.scoreOf(RED)).isEqualTo(2);
+        assertThat(match.scoreOf(BLUE)).isEqualTo(1);
+    }
+
+    @Test
+    void aGapKeepsWhatHasArrived() {
+        Match match = Match.replay(List.of(started(1), goal(2, RED), goal(4, BLUE))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.IN_PROGRESS);
+        assertThat(match.scoreOf(RED)).isEqualTo(1);
+        assertThat(match.scoreOf(BLUE)).isEqualTo(1);
+    }
+
+    @Test
+    void theMissingEventArrivesLater() {
+        List<MatchEvent> arrived = new ArrayList<>(List.of(started(1), goal(2, RED), goal(4, BLUE)));
+        assertThat(Match.replay(arrived).orElseThrow().scoreOf(RED)).isEqualTo(1);
+
+        arrived.add(goal(3, RED));
+        Match complete = Match.replay(arrived).orElseThrow();
+
+        assertThat(complete.scoreOf(RED)).isEqualTo(2);
+        assertThat(complete.scoreOf(BLUE)).isEqualTo(1);
+    }
+
+    @Test
+    void scoreReachedCompletesTheMatchWithItsWinner() {
+        Match match = Match.replay(List.of(started(1), ended(2, 5, 3))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.COMPLETED);
+        assertThat(match.winnerSide()).isEqualTo(RED);
+        assertThat(match.endedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void cancelledHasNoWinner() {
+        Match match = Match.replay(List.of(started(1), cancelled(2))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.CANCELLED);
+        assertThat(match.winnerSide()).isNull();
+    }
+
+    @Test
+    void aDrawAfterTimeIsCompletedWithoutWinner() {
+        Match match = Match.replay(List.of(started(1), drawAfterTime(2))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.COMPLETED);
+        assertThat(match.winnerSide()).isNull();
+    }
+
+    @Test
+    void aGoalAfterTheEndIsIgnored() {
+        Match match = Match.replay(List.of(started(1), ended(2, 1, 0), goal(3, BLUE))).orElseThrow();
+
+        assertThat(match.scoreOf(RED)).isEqualTo(1);
+        assertThat(match.scoreOf(BLUE)).isZero();
+    }
+
+    @Test
+    void onlyTheFirstEndCounts() {
+        Match match = Match.replay(List.of(started(1), ended(2, 5, 3), ended(3, 0, 5))).orElseThrow();
+
+        assertThat(match.scoreOf(RED)).isEqualTo(5);
+        assertThat(match.winnerSide()).isEqualTo(RED);
+    }
+
+    @Test
+    void aSecondStartDoesNotChangeTheMatch() {
+        Match match = Match.replay(List.of(started(1), goal(2, RED), started(3))).orElseThrow();
+
+        assertThat(match.status()).isEqualTo(MatchStatus.IN_PROGRESS);
+        assertThat(match.scoreOf(RED)).isEqualTo(1);
+    }
+
+    @Test
+    void eventsOfAnotherVenueAreIgnored() {
+        VenueId other = new VenueId(UUID.randomUUID());
+        GoalScored foreign = new GoalScored(newId(), other, TABLE, MATCH, 2, NOW, RED);
+
+        Match match = Match.replay(List.of(started(1), foreign)).orElseThrow();
+
+        assertThat(match.scoreOf(RED)).isZero();
+    }
+
+    @Test
+    void eventsOfAnotherTableAreIgnored() {
+        TableId other = new TableId(UUID.randomUUID());
+        GoalScored foreign = new GoalScored(newId(), VENUE, other, MATCH, 2, NOW, RED);
+
+        Match match = Match.replay(List.of(started(1), foreign)).orElseThrow();
+
+        assertThat(match.scoreOf(RED)).isZero();
     }
 }
