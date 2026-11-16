@@ -20,6 +20,11 @@ class InMemoryMatchRepository implements MatchRepository {
     }
 
     @Override
+    public Optional<Match> findByIdForUpdate(MatchId id) {
+        return findById(id);
+    }
+
+    @Override
     public Optional<Match> findCurrentByTable(TableId tableId) {
         return matches.values().stream()
                 .filter(m -> m.tableId().equals(tableId) && m.status() == MatchStatus.IN_PROGRESS)

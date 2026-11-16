@@ -32,18 +32,18 @@ public final class RecordMatchEventService implements RecordMatchEventUseCase {
             return new RecordResult.Duplicate(event.id());
         }
         //same seq, diff event: either one is wrong;
-        if(events.existsByMatchAndSeq(event.matchId(), event.seq()))
+        if(events.existsByMatchAndSeq(event.venueId(), event.matchId(), event.seq()))
         {
             return new RecordResult.Rejected(event.id(),"seq " + event.seq() + " is already used in this match");
         }
         // match exists and belongs to another venue or table
-        Optional<Match> curr=matches.findById(event.matchId());
+        Optional<Match> curr=matches.findByIdForUpdate(event.matchId());
         if(curr.isPresent() && !belongsToTheSamePlace(curr.get(),event)){
             return new RecordResult.Rejected(event.id(), "The match belongs to another venue or table");
         }
         //save event, rebuild match from all its events.
         events.save(event);
-        Match.replay(events.findByMatchId(event.matchId())).ifPresent(matches::save);
+        Match.replay(events.findByMatchId(event.venueId(), event.matchId())).ifPresent(matches::save);
         return new RecordResult.Accepted(event.id());
     }
     private static boolean belongsToTheSamePlace(Match match,MatchEvent event)

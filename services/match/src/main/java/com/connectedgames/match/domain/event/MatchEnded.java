@@ -29,8 +29,8 @@ public record MatchEnded(EventId id, VenueId venueId, TableId tableId, MatchId m
         Objects.requireNonNull(occurredAt, "occurredAt");
         Objects.requireNonNull(reason, "reason");
         finalScore = List.copyOf(finalScore);
-        if (finalScore.stream().map(SideScore::side).distinct().count() < 2) {
-            throw new IllegalArgumentException("The final score needs both sides");
+        if (finalScore.size() != 2 || finalScore.stream().map(SideScore::side).distinct().count() != 2) {
+            throw new IllegalArgumentException("The final score has exactly one RED and one BLUE score");
         }
     }
 }

@@ -51,7 +51,7 @@ class GetMatchTimelineServiceTest {
         for (MatchEvent event : toRecord) {
             events.save(event);
         }
-        Match.replay(events.findByMatchId(toRecord[0].matchId())).ifPresent(matches::save);
+        Match.replay(events.findByMatchId(toRecord[0].venueId(), toRecord[0].matchId())).ifPresent(matches::save);
     }
 
     @Test
@@ -85,5 +85,15 @@ class GetMatchTimelineServiceTest {
         record(goal(MATCH, 2, RED));
 
         assertThatThrownBy(() -> service.getMatchTimeline(MATCH)).isInstanceOf(MatchNotFoundException.class);
+    }
+
+    @Test
+    void eventsOfAnotherVenueAreNotInTheTimeline() {
+        VenueId other = new VenueId(UUID.randomUUID());
+        events.save(new GoalScored(newId(), other, TABLE, MATCH, 2, NOW, BLUE));
+        MatchStarted start = started(MATCH, 1);
+        record(start);
+
+        assertThat(service.getMatchTimeline(MATCH)).containsExactly(start);
     }
 }

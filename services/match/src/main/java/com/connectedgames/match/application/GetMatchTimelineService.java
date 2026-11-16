@@ -7,6 +7,7 @@ import com.connectedgames.match.application.port.out.MatchEventRepository;
 import com.connectedgames.match.application.port.out.MatchRepository;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.event.MatchEvent;
+import com.connectedgames.match.domain.match.Match;
 
 public final class GetMatchTimelineService implements GetMatchTimelineUseCase {
 
@@ -21,7 +22,7 @@ public final class GetMatchTimelineService implements GetMatchTimelineUseCase {
     @Override
     public List<MatchEvent> getMatchTimeline(MatchId matchId) {
         // events saved before the start do not make a match yet: without the match there is no timeline
-        matches.findById(matchId).orElseThrow(MatchNotFoundException::new);
-        return events.findByMatchId(matchId);
+        Match match = matches.findById(matchId).orElseThrow(MatchNotFoundException::new);
+        return events.findByMatchId(match.venueId(), matchId);
     }
 }

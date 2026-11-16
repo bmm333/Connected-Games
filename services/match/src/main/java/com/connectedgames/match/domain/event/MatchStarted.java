@@ -28,8 +28,8 @@ public record MatchStarted(EventId id, VenueId venueId, TableId tableId, MatchId
             throw new IllegalArgumentException("Points of a match should be at least 1 to win");
         }
         sides = List.copyOf(sides);
-        if (sides.stream().map(SideSetup::side).distinct().count() < 2) {
-            throw new IllegalArgumentException("A match needs both sides");
+        if (sides.size() != 2 || sides.stream().map(SideSetup::side).distinct().count() != 2) {
+            throw new IllegalArgumentException("A match has exactly one RED and one BLUE side");
         }
     }
 }

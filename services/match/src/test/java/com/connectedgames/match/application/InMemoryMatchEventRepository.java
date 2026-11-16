@@ -7,6 +7,7 @@ import java.util.List;
 import com.connectedgames.match.application.port.out.MatchEventRepository;
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.MatchId;
+import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.MatchEvent;
 
 class InMemoryMatchEventRepository implements MatchEventRepository {
@@ -19,8 +20,8 @@ class InMemoryMatchEventRepository implements MatchEventRepository {
     }
 
     @Override
-    public boolean existsByMatchAndSeq(MatchId matchId, int seq) {
-        return saved.stream().anyMatch(e -> e.matchId().equals(matchId) && e.seq() == seq);
+    public boolean existsByMatchAndSeq(VenueId venueId, MatchId matchId, int seq) {
+        return saved.stream().anyMatch(e -> e.venueId().equals(venueId) && e.matchId().equals(matchId) && e.seq() == seq);
     }
 
     @Override
@@ -29,9 +30,9 @@ class InMemoryMatchEventRepository implements MatchEventRepository {
     }
 
     @Override
-    public List<MatchEvent> findByMatchId(MatchId matchId) {
+    public List<MatchEvent> findByMatchId(VenueId venueId, MatchId matchId) {
         return saved.stream()
-                .filter(e -> e.matchId().equals(matchId))
+                .filter(e -> e.venueId().equals(venueId) && e.matchId().equals(matchId))
                 .sorted(Comparator.comparingInt(MatchEvent::seq))
                 .toList();
     }

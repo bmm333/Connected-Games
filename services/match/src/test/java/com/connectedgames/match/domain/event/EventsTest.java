@@ -85,4 +85,21 @@ class EventsTest {
     void aScoreCannotBeNegative() {
         assertThatIllegalArgumentException().isThrownBy(() -> new SideScore(RED, -1));
     }
+
+    @Test
+    void aStartWithMoreThanTwoSidesIsRejected() {
+        List<SideSetup> three = List.of(new SideSetup(RED, null, null), new SideSetup(BLUE, null, null),
+                new SideSetup(RED, null, null));
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, GameMode.INDIVIDUAL, 5, three));
+    }
+
+    @Test
+    void anEndWithMoreThanTwoScoresIsRejected() {
+        List<SideScore> three = List.of(new SideScore(RED, 1), new SideScore(BLUE, 0), new SideScore(RED, 2));
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new MatchEnded(ID, VENUE, TABLE, MATCH, 2, NOW, EndReason.SCORE_REACHED, three, RED));
+    }
 }

@@ -190,4 +190,16 @@ class RecordMatchEventServiceTest {
         assertThat(match.scoreOf(BLUE)).isEqualTo(3);
         assertThat(matches.findCurrentByTable(TABLE)).isEmpty();
     }
+
+    @Test
+    void anotherVenueCannotTakeTheSeqOfAMatch() {
+        VenueId other = new VenueId(UUID.randomUUID());
+        GoalScored foreign = new GoalScored(newId(), other, TABLE, MATCH, 1, NOW, RED);
+        service.record(foreign, new EventTopic(other, TABLE, MATCH));
+
+        RecordResult result = service.record(started(1), topic());
+
+        assertThat(result).isInstanceOf(RecordResult.Accepted.class);
+        assertThat(matches.findById(MATCH).orElseThrow().scoreOf(RED)).isZero();
+    }
 }
