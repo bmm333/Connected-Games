@@ -19,7 +19,6 @@ import static com.connectedgames.match.adapters.in.mqtt.MatchEventParserTest.TAB
 import static com.connectedgames.match.adapters.in.mqtt.MatchEventParserTest.VENUE;
 import static com.connectedgames.match.adapters.in.mqtt.MatchEventParserTest.envelope;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MatchEventListenerTest {
 
@@ -99,12 +98,24 @@ class MatchEventListenerTest {
     }
 
     @Test
-    void ifSavingFailsThereIsNoAckAndTheErrorGoesUp() {
+    void ifSavingFailsThereIsNoAckAndTheErrorDoesNotGoUpToTheMqttClient() {
         recording = (MatchEvent event, EventTopic topic) -> {
             throw new IllegalStateException("database down");
         };
 
-        assertThatThrownBy(() -> listener().onMessage(TOPIC, GOAL)).isInstanceOf(IllegalStateException.class);
+        listener().onMessage(TOPIC, GOAL);
+
         assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void ifTheAckCannotBeSentTheErrorDoesNotGoUpEither() {
+        AcknowledgeEventUseCase failing = (venue, results) -> {
+            throw new IllegalStateException("broker down");
+        };
+
+        new MatchEventListener(recording, failing).onMessage(TOPIC, GOAL);
+
+        assertThat(calls).containsExactly("record");
     }
 }

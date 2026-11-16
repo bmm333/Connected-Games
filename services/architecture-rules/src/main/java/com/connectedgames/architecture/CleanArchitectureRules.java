@@ -24,6 +24,7 @@ public final class CleanArchitectureRules {
             .applicationServices("..application..")
             .adapter("web", "..adapters.in.web..")
             .adapter("mqtt", "..adapters.in.mqtt..")
+            .adapter("mqttOut", "..adapters.out.mqtt..")
             .adapter("persistence", "..adapters.out.persistence..")
             .adapter("security", "..adapters.out.security..")
             // infrastructure is the composition root: it creates the use cases, so it may see every layer

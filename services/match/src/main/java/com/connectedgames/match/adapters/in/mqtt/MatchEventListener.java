@@ -28,6 +28,14 @@ public class MatchEventListener {
     }
 
     public void onMessage(String topic, String payload) {
+        try {
+            handle(topic, payload);
+        } catch (RuntimeException e) {
+            log.error("Event on {} not processed, no ack sent", topic, e);
+        }
+    }
+
+    private void handle(String topic, String payload) {
         EventTopic eventTopic;
         try {
             eventTopic = topicOf(topic);
