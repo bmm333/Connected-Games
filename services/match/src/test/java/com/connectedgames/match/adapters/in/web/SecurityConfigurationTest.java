@@ -17,11 +17,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** The access rules of contracts/openapi/match.yaml: reading is public, anything else needs a token. */
-@WebMvcTest(MatchController.class)
-@Import({SecurityConfiguration.class, StubUseCases.class})
+@WebMvcTest({MatchController.class, LiveController.class})
+@Import({SecurityConfiguration.class, StubUseCases.class, TableStreams.class})
 class SecurityConfigurationTest {
 
     @Autowired MockMvc mvc;
@@ -29,6 +30,12 @@ class SecurityConfigurationTest {
     @Test
     void theCurrentMatchIsPublic() throws Exception {
         mvc.perform(get("/tables/{id}/current-match", TABLE.value())).andExpect(status().isOk());
+    }
+
+    @Test
+    void theLiveStreamOfATableIsPublic() throws Exception {
+        mvc.perform(get("/tables/{id}/live", TABLE.value()).accept(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(request().asyncStarted());
     }
 
     @Test

@@ -5,7 +5,6 @@ import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import com.connectedgames.match.application.AcknowledgeEventService;
 import com.connectedgames.match.application.GetCurrentMatchService;
@@ -18,6 +17,7 @@ import com.connectedgames.match.application.port.in.GetMatchTimelineUseCase;
 import com.connectedgames.match.application.port.in.GetMatchUseCase;
 import com.connectedgames.match.application.port.in.RecordMatchEventUseCase;
 import com.connectedgames.match.application.port.out.AckPublisher;
+import com.connectedgames.match.application.port.out.MatchChangeNotifier;
 import com.connectedgames.match.application.port.out.MatchEventRepository;
 import com.connectedgames.match.application.port.out.MatchRepository;
 
@@ -44,13 +44,12 @@ class MatchConfiguration{
         return Clock.systemUTC();
     }
 
-    /** One transaction per event*/
     @Bean
     RecordMatchEventUseCase recordMatchEvent(MatchEventRepository events, MatchRepository matches,
-                                             PlatformTransactionManager transactionManager) {
-        RecordMatchEventService service = new RecordMatchEventService(events, matches);
-        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-        return (event, topic) -> transaction.execute(status -> service.record(event, topic));
+                                             PlatformTransactionManager transactionManager,
+                                             MatchChangeNotifier notifier) {
+        return new TransactionalRecordMatchEvent(new RecordMatchEventService(events, matches),
+                transactionManager, notifier);
     }
 
     @Bean
