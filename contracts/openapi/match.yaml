@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Connected Games - Match API
   version: 0.1.0
-  description: Match status and event history. Minimum version for M1, read-only.
+  description: Match status, event history and live score. Read-only.
   license:
     name: MIT
     identifier: MIT
@@ -37,6 +37,32 @@ paths:
                 $ref: '#/components/schemas/Match'
         '404':
           $ref: '#/components/responses/NotFound'
+
+  /tables/{tableId}/live:
+    get:
+      tags: [Matches]
+      operationId: streamTableMatch
+      summary: Live score of the match at a table
+      description: |
+        Public, like the current match. Server-sent events: the current Match is sent as soon as the
+        stream opens, then again at every change. When a match ends the last event carries the final
+        score, and the next match at the table is sent as soon as it starts. The stream also opens
+        when the table has no match yet and stays silent until one starts: match does not know the
+        tables (catalog does), so it cannot tell an empty table from one that does not exist.
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stream of Match, one per event, as JSON in the data field
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/Match'
 
   /matches/{matchId}:
     get:
