@@ -1,20 +1,27 @@
 package com.connectedgames.identity.infrastructure;
 
 import com.connectedgames.identity.application.CreateGuestSessionService;
+import com.connectedgames.identity.application.CreatePairingCodeService;
 import com.connectedgames.identity.application.GetCurrentUserService;
 import com.connectedgames.identity.application.LoginService;
 import com.connectedgames.identity.application.LogoutService;
+import com.connectedgames.identity.application.PairDeviceService;
 import com.connectedgames.identity.application.RefreshSessionService;
 import com.connectedgames.identity.application.RegisterService;
 import com.connectedgames.identity.application.SessionTokens;
 import com.connectedgames.identity.application.port.in.CreateGuestSessionUseCase;
+import com.connectedgames.identity.application.port.in.CreatePairingCodeUseCase;
 import com.connectedgames.identity.application.port.in.GetCurrentUserUseCase;
 import com.connectedgames.identity.application.port.in.LoginUseCase;
 import com.connectedgames.identity.application.port.in.LogoutUseCase;
+import com.connectedgames.identity.application.port.in.PairDeviceUseCase;
 import com.connectedgames.identity.application.port.in.RefreshSessionUseCase;
 import com.connectedgames.identity.application.port.in.RegisterUseCase;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
+import com.connectedgames.identity.application.port.out.DeviceRepository;
 import com.connectedgames.identity.application.port.out.GuestRepository;
+import com.connectedgames.identity.application.port.out.PairingCodeGenerator;
+import com.connectedgames.identity.application.port.out.PairingCodeRepository;
 import com.connectedgames.identity.application.port.out.PasswordHasher;
 import com.connectedgames.identity.application.port.out.RefreshTokenGenerator;
 import com.connectedgames.identity.application.port.out.RefreshTokenRepository;
@@ -66,8 +73,8 @@ class IdentityConfiguration {
     @Bean
     RefreshSessionUseCase refreshSession(RefreshTokenRepository refreshTokens, RefreshTokenGenerator tokenGenerator,
                                          SessionRepository sessions, GuestRepository guests, UserRepository users,
-                                         SessionTokens tokens, Clock clock) {
-        return new RefreshSessionService(refreshTokens, tokenGenerator, sessions, guests, users, tokens, clock);
+                                         DeviceRepository devices, SessionTokens tokens, Clock clock) {
+        return new RefreshSessionService(refreshTokens, tokenGenerator, sessions, guests, users, devices, tokens, clock);
     }
 
     @Bean
@@ -87,5 +94,21 @@ class IdentityConfiguration {
     @Bean
     GetCurrentUserUseCase getCurrentUser(UserRepository users) {
         return new GetCurrentUserService(users);
+    }
+
+    @Bean
+    CreatePairingCodeUseCase createPairingCode(UserRepository users, PairingCodeRepository codes,
+                                               PairingCodeGenerator generator, Clock clock,
+                                               TransactionTemplate transaction) {
+        CreatePairingCodeService service = new CreatePairingCodeService(users, codes, generator, clock);
+        return (requester, venueId, tableId, surface) ->
+                transaction.execute(status -> service.createPairingCode(requester, venueId, tableId, surface));
+    }
+
+    @Bean
+    PairDeviceUseCase pairDevice(PairingCodeRepository codes, DeviceRepository devices, SessionRepository sessions,
+                                 SessionTokens tokens, Clock clock, TransactionTemplate transaction) {
+        PairDeviceService service = new PairDeviceService(codes, devices, sessions, tokens, clock);
+        return (pairingCode, surface) -> transaction.execute(status -> service.pairDevice(pairingCode, surface));
     }
 }

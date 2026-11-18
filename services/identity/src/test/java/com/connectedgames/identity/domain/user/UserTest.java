@@ -88,4 +88,21 @@ class UserTest {
         assertThat(manager.hasRole(Role.PLAYER)).isTrue();
         assertThat(manager.hasRole(Role.PLATFORM_ADMIN)).isFalse();
     }
+
+    @Test
+    void managesOnlyTheVenueOfItsManagerRole() {
+        UUID belvedere = UUID.randomUUID();
+        User manager = userWith("Mario", List.of(PLAYER, RoleAssignment.venueManager(belvedere, UUID.randomUUID())));
+
+        assertThat(manager.managesVenue(belvedere)).isTrue();
+        assertThat(manager.managesVenue(UUID.randomUUID())).isFalse();
+    }
+
+    @Test
+    void aPlayerOrAnAdminManagesNoVenue() {
+        UUID venue = UUID.randomUUID();
+
+        assertThat(userWith("Mario", List.of(PLAYER)).managesVenue(venue)).isFalse();
+        assertThat(userWith("Admin", List.of(RoleAssignment.of(Role.PLATFORM_ADMIN))).managesVenue(venue)).isFalse();
+    }
 }

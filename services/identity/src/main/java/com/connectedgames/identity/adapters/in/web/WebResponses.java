@@ -1,9 +1,13 @@
 package com.connectedgames.identity.adapters.in.web;
 
 import com.connectedgames.identity.application.port.in.ActiveSession;
+import com.connectedgames.identity.application.port.in.DeviceSession;
 import com.connectedgames.identity.application.port.in.GuestSession;
 import com.connectedgames.identity.application.port.in.IssuedSession;
 import com.connectedgames.identity.application.port.in.UserSession;
+import com.connectedgames.identity.domain.device.Device;
+import com.connectedgames.identity.domain.device.PairingCode;
+import com.connectedgames.identity.domain.device.Surface;
 import com.connectedgames.identity.domain.guest.Guest;
 import com.connectedgames.identity.domain.session.SessionKind;
 import com.connectedgames.identity.domain.user.Role;
@@ -22,23 +26,37 @@ final class WebResponses {
         // response container only
     }
 
-    /** One of GuestSession or UserSession of the contract: only the profile of its kind is present */
+    /** One of GuestSession, UserSession or DeviceSession of the contract: only the profile of its kind is present */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     record SessionResponse(UUID id, SessionKind kind, String accessToken, Instant expiresAt,
                            String refreshToken, Instant refreshExpiresAt,
-                           GuestProfileResponse guest, UserResponse user) {
+                           GuestProfileResponse guest, UserResponse user, DeviceResponse device) {
 
         static SessionResponse from(ActiveSession active) {
             // sealed: the compiler checks that every kind of session is handled
             return switch (active) {
-                case GuestSession g -> of(g.session(), GuestProfileResponse.from(g.guest()), null);
-                case UserSession u -> of(u.session(), null, UserResponse.from(u.user()));
+                case GuestSession g -> of(g.session(), GuestProfileResponse.from(g.guest()), null, null);
+                case UserSession u -> of(u.session(), null, UserResponse.from(u.user()), null);
+                case DeviceSession d -> of(d.session(), null, null, DeviceResponse.from(d.device()));
             };
         }
 
-        private static SessionResponse of(IssuedSession s, GuestProfileResponse guest, UserResponse user) {
+        private static SessionResponse of(IssuedSession s, GuestProfileResponse guest, UserResponse user,
+                                          DeviceResponse device) {
             return new SessionResponse(s.id().value(), s.kind(), s.accessToken(), s.accessTokenExpiresAt(),
-                    s.refreshToken(), s.refreshExpiresAt(), guest, user);
+                    s.refreshToken(), s.refreshExpiresAt(), guest, user, device);
+        }
+    }
+
+    record DeviceResponse(UUID id, UUID venueId, UUID tableId, Surface surface) {
+        static DeviceResponse from(Device device) {
+            return new DeviceResponse(device.id().value(), device.venueId(), device.tableId(), device.surface());
+        }
+    }
+
+    record PairingCodeResponse(String code, Instant expiresAt) {
+        static PairingCodeResponse from(PairingCode pairingCode) {
+            return new PairingCodeResponse(pairingCode.value(), pairingCode.expiresAt());
         }
     }
 

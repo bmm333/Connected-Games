@@ -30,7 +30,7 @@ class LogoutServiceTest {
 
     private final LoginService login = new LoginService(users, new FakePasswordHasher(), sessions, tokens, clock);
     private final RefreshSessionService refresh = new RefreshSessionService(refreshTokens, tokenGenerator,
-            sessions, new InMemoryGuestRepository(), users, tokens, clock);
+            sessions, new InMemoryGuestRepository(), users, new InMemoryDeviceRepository(), tokens, clock);
     private final LogoutService service = new LogoutService(sessions, clock);
 
     @BeforeEach

@@ -2,17 +2,22 @@ package com.connectedgames.identity.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 
 import com.connectedgames.identity.application.port.in.ActiveSession;
+import com.connectedgames.identity.application.port.in.DeviceSession;
 import com.connectedgames.identity.application.port.in.GuestSession;
 import com.connectedgames.identity.application.port.in.RefreshSessionUseCase;
 import com.connectedgames.identity.application.port.in.UserSession;
+import com.connectedgames.identity.application.port.out.DeviceRepository;
 import com.connectedgames.identity.application.port.out.GuestRepository;
 import com.connectedgames.identity.application.port.out.RefreshTokenGenerator;
 import com.connectedgames.identity.application.port.out.RefreshTokenRepository;
 import com.connectedgames.identity.application.port.out.SessionRepository;
 import com.connectedgames.identity.application.port.out.UserRepository;
 import com.connectedgames.identity.domain.PlayerId;
+import com.connectedgames.identity.domain.device.Device;
+import com.connectedgames.identity.domain.device.DeviceId;
 import com.connectedgames.identity.domain.guest.Guest;
 import com.connectedgames.identity.domain.session.RefreshToken;
 import com.connectedgames.identity.domain.session.Session;
@@ -26,17 +31,20 @@ public final class RefreshSessionService implements RefreshSessionUseCase
     private final SessionRepository sessions;
     private final GuestRepository guests;
     private final UserRepository users;
+    private final DeviceRepository devices;
     private final SessionTokens tokens;
     private final Clock clock;
 
     public RefreshSessionService(RefreshTokenRepository refreshTokens,RefreshTokenGenerator tokenGenerator,
-            SessionRepository sessions,GuestRepository guests,UserRepository users,SessionTokens tokens,Clock clock)
+            SessionRepository sessions,GuestRepository guests,UserRepository users,DeviceRepository devices,
+            SessionTokens tokens,Clock clock)
     {
         this.refreshTokens=refreshTokens;
         this.tokenGenerator=tokenGenerator;
         this.sessions=sessions;
         this.guests=guests;
         this.users=users;
+        this.devices=devices;
         this.tokens=tokens;
         this.clock=clock;
     }
@@ -70,7 +78,7 @@ public final class RefreshSessionService implements RefreshSessionUseCase
         {
             case GUEST -> guestSession(refreshed,now);
             case USER -> userSession(refreshed,now);
-            case DEVICE -> throw new UnsupportedOperationException("Device sessions come with pairing (M2)");
+            case DEVICE -> deviceSession(refreshed,now);
         };
     }
 
@@ -87,5 +95,13 @@ public final class RefreshSessionService implements RefreshSessionUseCase
         User user=users.findById(new UserId(session.subjectId()))
                 .orElseThrow(() -> new IllegalStateException("Session " + session.id().value() + " references a missing user"));
         return new UserSession(user,tokens.issue(session,user.roles(),now));
+    }
+
+    // a display has no role; its device is loaded again so the tokens always describe the table it is paired with
+    private DeviceSession deviceSession(Session session,Instant now)
+    {
+        Device device=devices.findById(new DeviceId(session.subjectId()))
+                .orElseThrow(() -> new IllegalStateException("Session " + session.id().value() + " references a missing device"));
+        return new DeviceSession(device,tokens.issue(session,List.of(),now));
     }
 }
