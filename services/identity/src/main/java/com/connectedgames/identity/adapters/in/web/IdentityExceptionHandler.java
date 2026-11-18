@@ -2,7 +2,9 @@ package com.connectedgames.identity.adapters.in.web;
 
 import com.connectedgames.identity.application.EmailAlreadyRegisteredException;
 import com.connectedgames.identity.application.InvalidCredentialsException;
+import com.connectedgames.identity.application.InvalidPairingCodeException;
 import com.connectedgames.identity.application.InvalidRefreshTokenException;
+import com.connectedgames.identity.application.NotVenueManagerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,16 @@ class IdentityExceptionHandler {
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     ProblemDetail conflict(EmailAlreadyRegisteredException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidPairingCodeException.class)
+    ProblemDetail pairingCodeNotFound(InvalidPairingCodeException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(NotVenueManagerException.class)
+    ProblemDetail forbidden(NotVenueManagerException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
     /** The domain refused a value (email format, nickname length...) */

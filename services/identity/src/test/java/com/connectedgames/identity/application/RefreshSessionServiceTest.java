@@ -38,7 +38,7 @@ class RefreshSessionServiceTest {
     private final CreateGuestSessionService guestSessions = new CreateGuestSessionService(guests, sessions, tokens, clock);
     private final LoginService login = new LoginService(users, new FakePasswordHasher(), sessions, tokens, clock);
     private final RefreshSessionService service = new RefreshSessionService(refreshTokens, tokenGenerator,
-            sessions, guests, users, tokens, clock);
+            sessions, guests, users, new InMemoryDeviceRepository(), tokens, clock);
 
     private final User mario = user("mario@example.com", "secret123", List.of(PLAYER));
 

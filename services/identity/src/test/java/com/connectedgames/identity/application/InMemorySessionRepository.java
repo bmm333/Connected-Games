@@ -1,8 +1,10 @@
 package com.connectedgames.identity.application;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import com.connectedgames.identity.application.port.out.SessionRepository;
 import com.connectedgames.identity.domain.session.Session;
@@ -21,6 +23,12 @@ class InMemorySessionRepository implements SessionRepository {
     public Optional<Session> findById(SessionId id)
     {
         return Optional.ofNullable(sessions.get(id));
+    }
+
+    @Override
+    public List<Session> findBySubject(UUID subjectId)
+    {
+        return sessions.values().stream().filter(s -> s.subjectId().equals(subjectId)).toList();
     }
 
     int count() { return sessions.size(); }

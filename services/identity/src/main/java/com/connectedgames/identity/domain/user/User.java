@@ -4,6 +4,7 @@ import com.connectedgames.identity.domain.PlayerId;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public record User(UserId id, Email email, String displayName, PasswordHash passwordHash,
                    PlayerId playerId, List<RoleAssignment> roles) {
@@ -25,7 +26,14 @@ public record User(UserId id, Email email, String displayName, PasswordHash pass
         if(roles.isEmpty())
             throw new IllegalArgumentException("A user needs at least one role");
     }
-
+    /**Added new method: Only the manager of that very venue the same role for another venue
+     * dose not count*/
+    public boolean managesVenue(UUID venueId)
+    {
+        return roles.stream().anyMatch(assignment ->
+                assignment.role() == Role.VENUE_MANAGER && 
+                assignment.venueId().equals(venueId));       
+    }
     public boolean hasRole(Role role) {
         return roles.stream().anyMatch(assignment -> assignment.role() == role);
     }

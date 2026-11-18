@@ -5,7 +5,9 @@ import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.session.SessionId;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /** Implements the SessionRepository port with JPA. */
 @Component
@@ -25,5 +27,9 @@ class SessionPersistenceAdapter implements SessionRepository {
     @Override
     public Optional<Session> findById(SessionId id) {
         return jpa.findById(id.value()).map(SessionEntity::toDomain);
+    }
+    @Override
+    public List<Session> findBySubject(UUID subjectId) {
+        return jpa.findBySubjectId(subjectId).stream().map(SessionEntity::toDomain).toList();
     }
 }

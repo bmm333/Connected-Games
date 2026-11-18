@@ -1,7 +1,12 @@
 package com.connectedgames.identity.adapters.in.web;
 
+import java.util.UUID;
+
+import com.connectedgames.identity.domain.device.Surface;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /** JSON bodies received by the identity API, with the limits of contracts/openapi/identity.yaml */
@@ -20,4 +25,7 @@ final class WebRequests {
     record RegisterRequest(@NotBlank @Size(max = 254) String email,
                            @NotNull @Size(min = 8, max = 64) String password,
                            @NotNull @Size(min = 2, max = 40) String displayName) {}
+    record PairingCodeRequest(@NotNull UUID venueId,@NotNull UUID tableId, @NotNull Surface surface) {}
+
+    record PairDeviceRequest(@NotNull @Pattern(regexp = "[A-Z0-9]{6}") String pairingCode, @NotNull Surface surface) {} 
 }

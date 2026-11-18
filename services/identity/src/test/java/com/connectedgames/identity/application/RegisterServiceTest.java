@@ -35,7 +35,7 @@ class RegisterServiceTest {
     private final CreateGuestSessionService guestSessions = new CreateGuestSessionService(guests, sessions, tokens, clock);
     private final LoginService login = new LoginService(users, passwordHasher, sessions, tokens, clock);
     private final RefreshSessionService refresh = new RefreshSessionService(refreshTokens, tokenGenerator,
-            sessions, guests, users, tokens, clock);
+            sessions, guests, users, new InMemoryDeviceRepository(), tokens, clock);
     private final RegisterService service = new RegisterService(users, passwordHasher, sessions, tokens, clock);
 
     private UserSession registerGiulia(Optional<GuestSession> asGuest) {

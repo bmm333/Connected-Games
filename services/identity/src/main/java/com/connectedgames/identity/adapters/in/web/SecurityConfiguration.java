@@ -39,6 +39,7 @@ class SecurityConfiguration {
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/sessions"),
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/sessions/guest"),
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/sessions/refresh"),
+            PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/devices/pair"),
             PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/.well-known/jwks.json"));
 
     @Bean
