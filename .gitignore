@@ -2,3 +2,5 @@
 build/
 .env
 .vscode/
+hs_err_pid*.log
+services/*/bin/
