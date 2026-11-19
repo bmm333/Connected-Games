@@ -1,0 +1,58 @@
+@startuml deployment
+!pragma layout smetana
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowFontSize 11
+title Connected Games Platform - Diagramma di deployment e componenti
+
+node "Browser" <<device>> as browser {
+  component "Web app (PWA, React)" as web
+}
+
+cloud "AWS" as aws {
+  component "API gateway + auth\n(JWT, tenant)" as gw
+  component "identity" as identity
+  component "catalog" as catalog
+  component "match" as match
+  component "tournament" as tournament
+  component "stats" as stats
+  component "Broker MQTT" as cbroker
+  database "PostgreSQL (RLS)" as pg
+}
+
+node "Venue hub\n(Raspberry Pi Zero W)" <<device>> as hub {
+  component "Edge agent (C++)" as agent
+  component "Mosquitto\n(broker locale)" as lbroker
+  database "SQLite (outbox)" as sqlite
+}
+
+node "Table node\n(laptop / Raspberry)" <<device>> as tnode {
+  component "Vision (C++)" as vision
+  interface "IFrameSource" as frames
+  vision -- frames
+}
+
+node "Telefono Android" <<device>> as phone {
+  component "Camera stream\n(IP Webcam)" as cam
+}
+
+node "Schermo tavolo" <<device>> as screen {
+  component "Web kiosk (PWA)" as kiosk
+}
+
+web ..> gw : <<HTTPS/REST>>
+gw ..> identity : <<REST>>
+gw ..> catalog : <<REST>>
+gw ..> match : <<REST>>
+gw ..> tournament : <<REST>>
+gw ..> stats : <<REST>>
+match ..> cbroker : <<MQTT>>
+stats ..> pg : <<JDBC>>
+agent ..> cbroker : <<MQTT/TLS>>
+agent ..> lbroker : <<MQTT>>
+agent ..> sqlite : <<SQL>>
+vision ..> lbroker : <<MQTT>>
+vision ..> cam : <<MJPEG/RTSP\nvia WiFi>>
+kiosk ..> lbroker : <<WebSocket>>
+@enduml
