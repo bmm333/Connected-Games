@@ -73,14 +73,14 @@ describe('MatchSimulatorUseCase', () => {
     await simulator.scoreGoal(table.table.id, 'BLUE')
 
     expect(topics).toEqual([
-      `venues/venue-1/games/table-1/matches/${started.matchId}/events`,
-      `venues/venue-1/games/table-1/matches/${started.matchId}/events`,
+      `venues/venue-1/tables/table-1/matches/${started.matchId}/events`,
+      `venues/venue-1/tables/table-1/matches/${started.matchId}/events`,
     ])
     expect(published.map((event) => event.seq)).toEqual([1, 2])
     expect(started).toMatchObject({
       tenantId: 'org-1',
       venueId: 'venue-1',
-      gameId: 'table-1',
+      tableId: 'table-1',
       source: 'EMULATED',
       payload: { mode: 'INDIVIDUAL', pointsToWin: 2 },
     })

@@ -27,7 +27,7 @@ export interface MatchSimulatorUseCase {
 }
 
 const topicFor = (table: SimulatorTable, matchId: string) =>
-  `venues/${encodeURIComponent(table.venue.id)}/games/${encodeURIComponent(table.table.id)}/matches/${encodeURIComponent(matchId)}/events`
+  `venues/${encodeURIComponent(table.venue.id)}/tables/${encodeURIComponent(table.table.id)}/matches/${encodeURIComponent(matchId)}/events`
 
 export function createMatchSimulatorUseCase(
   catalog: SimulatorCatalogRepository,
@@ -42,7 +42,7 @@ export function createMatchSimulatorUseCase(
       // The tenant is the organization that owns the venue (contracts/asyncapi)
       tenantId: state.table.venue.organizationId,
       venueId: state.table.venue.id,
-      gameId: state.table.table.id,
+      tableId: state.table.table.id,
       matchId: state.matchId,
       seq: state.seq,
       type,
