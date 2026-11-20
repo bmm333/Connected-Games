@@ -8,7 +8,7 @@ export interface MatchEventEnvelope {
   readonly eventId: string
   readonly tenantId: string
   readonly venueId: string
-  readonly gameId: string
+  readonly tableId: string
   readonly matchId: string
   readonly seq: number
   readonly type: MatchEventType

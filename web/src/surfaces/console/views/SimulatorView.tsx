@@ -78,7 +78,7 @@ export function SimulatorView() {
       if (published.some((event) => event.type === 'MatchEnded')) {
         setActiveTables((current) => {
           const next = new Set(current)
-          published.forEach((event) => next.delete(event.gameId))
+          published.forEach((event) => next.delete(event.tableId))
           return next
         })
       }
