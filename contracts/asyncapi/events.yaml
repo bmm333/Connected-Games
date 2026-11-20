@@ -45,6 +45,16 @@ channels:
     messages:
       eventsAcknowledged:
         $ref: '#/components/messages/EventsAcknowledged'
+  matchCompleted:
+    address: 'platform/matches/completed'
+    description: |
+      One message for each closed match, published by the match service for stats and tournament.
+      It lives outside venues/..., so the broker can forbid hubs to publish under platform/.
+      It is written to an outbox in the transaction that closes the match, so delivery is at least once:
+      consumers must be idempotent on matchId.
+    messages:
+      matchCompleted:
+        $ref: '#/components/messages/MatchCompleted'
   
 
 
@@ -73,6 +83,28 @@ operations:
       mqtt:
         qos: 1
         retain: false
+  publishMatchCompleted:
+    action: send
+    summary: Match service publishes a closed match
+    channel:
+      $ref: '#/channels/matchCompleted'
+    messages:
+      - $ref: '#/channels/matchCompleted/messages/matchCompleted'
+    bindings:
+      mqtt:
+        qos: 1
+        retain: false
+  receiveMatchCompleted:
+    action: receive
+    summary: Stats and tournament receive closed matches, each with its own persistent session
+    channel:
+      $ref: '#/channels/matchCompleted'
+    messages:
+      - $ref: '#/channels/matchCompleted/messages/matchCompleted'
+    bindings:
+      mqtt:
+        qos: 1
+        retain: false
 
 components:
   messages:
@@ -94,6 +126,12 @@ components:
       contentType: application/json
       payload:
         $ref: '../schemas/match-ended.schema.json'
+    MatchCompleted:
+      name: MatchCompleted
+      title: Match Completed
+      contentType: application/json
+      payload:
+        $ref: '../schemas/match-completed.schema.json'
     EventsAcknowledged:
       name: EventsAcknowledged
       title: Eventi confermati

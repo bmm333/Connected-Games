@@ -147,7 +147,7 @@ components:
 
     Match:
       type: object
-      required: [id, tableId, venueId, status, mode, pointsToWin, sides, startedAt]
+      required: [id, tableId, venueId,gameTypeId, status, mode, pointsToWin, sides, startedAt]
       properties:
         id:
           type: string
@@ -158,6 +158,13 @@ components:
         venueId:
           type: string
           format: uuid
+        gameTypeId:
+          type: string
+          format: uuid
+        tournamentMatchId:
+          type: string
+          format: uuid
+          description: Match of a tournament bracket played by this match, missing for friendly matches
         status:
           $ref: '#/components/schemas/MatchStatus'
         mode:
