@@ -79,7 +79,9 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenan
             .toList();
         return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,finalStatus,mode,pointsToWin,scored,event.winnerSide(),startedAt,event.occurredAt());
     }
-
+    public boolean isClosed(){
+        return status!=MatchStatus.IN_PROGRESS;
+    }
     public int scoreOf(Side side) {
         return sides.stream()
             .filter(s -> s.side() == side)
