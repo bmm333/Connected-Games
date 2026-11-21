@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MatchCompleted",
+  "description": "A closed match, published by the match service for stats and tournament. One per match: matchId is the key for idempotency.",
+  "type": "object",
+  "required": ["eventId", "tenantId", "venueId", "tableId", "matchId", "gameTypeId", "mode", "pointsToWin", "startedAt", "endedAt", "reason", "sides"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid", "description": "Id of the outbox row: for logs and tracing, not for idempotency" },
+    "tenantId": { "type": "string", "description": "Organization of the venue, as declared by the hub" },
+    "venueId": { "type": "string", "format": "uuid" },
+    "tableId": { "type": "string", "format": "uuid" },
+    "matchId": { "type": "string", "format": "uuid" },
+    "gameTypeId": { "type": "string", "format": "uuid" },
+    "tournamentMatchId": { "type": "string", "format": "uuid", "description": "Missing for friendly or offline matches" },
+    "mode": { "enum": ["INDIVIDUAL", "TEAM"] },
+    "pointsToWin": { "type": "integer", "minimum": 1 },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "endedAt": { "type": "string", "format": "date-time" },
+    "reason": { "enum": ["SCORE_REACHED", "TIME_EXPIRED", "CANCELLED"] },
+    "winnerSide": { "enum": ["RED", "BLUE"], "description": "Missing if the match was cancelled or ended in a draw" },
+    "sides": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["side", "score"],
+        "properties": {
+          "side": { "enum": ["RED", "BLUE"] },
+          "participantId": { "type": "string", "description": "Squad or player: missing if the match was played without login" },
+          "displayName": { "type": "string" },
+          "score": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

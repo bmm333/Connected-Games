@@ -12,4 +12,5 @@
 | [ADR007](ADR007.md) | MQTT with Eclipse Mosquitto as the message broker |
 | [ADR008](ADR008.md) | Local environment with Docker Compose and a Gradle version catalog |
 | [ADR009](ADR009.md) | Git workflow with task branches and pull requests |
-
+| [ADR011](ADR011.md) | `MatchCompleted` event published by match through a transactional outbox |
+| [ADR012](ADR012.md) | Game type, tournament link and tenant carried by match events |
