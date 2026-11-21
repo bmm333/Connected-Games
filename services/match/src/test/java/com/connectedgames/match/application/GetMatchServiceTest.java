@@ -1,5 +1,6 @@
 package com.connectedgames.match.application;
 
+import com.connectedgames.match.Fixtures;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +38,7 @@ class GetMatchServiceTest {
     }
 
     private static MatchStarted started(MatchId match) {
-        return new MatchStarted(newId(), VENUE, TABLE, match, 1, NOW, GameMode.INDIVIDUAL, 5,
+        return new MatchStarted(newId(), VENUE, TABLE, match, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5,
                 List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue")));
     }
 

@@ -1,5 +1,6 @@
 package com.connectedgames.match.adapters.out.persistence;
 
+import com.connectedgames.match.Fixtures;
 import com.connectedgames.match.TestcontainersConfiguration;
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
@@ -60,7 +61,7 @@ class MatchPersistenceAdaptersTest {
     }
 
     private static MatchStarted started(VenueId venue, TableId table, MatchId match, int seq, Instant at) {
-        return new MatchStarted(newId(), venue, table, match, seq, at, GameMode.TEAM, 5,
+        return new MatchStarted(newId(), venue, table, match, seq, at, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.TEAM, 5,
                 List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, "team-7", "Lightning")));
     }
 
@@ -169,6 +170,40 @@ class MatchPersistenceAdaptersTest {
         assertThat(loaded.sides()).extracting(MatchSide::side).containsExactly(RED, BLUE);
         assertThat(loaded.sides().get(0).participantId()).isNull();
         assertThat(loaded.sides().get(1).participantId()).isEqualTo("team-7");
+    }
+
+    @Test
+    void savesAndLoadsTenantGameTypeAndTournamentMatch() {
+        Match match = matchOf(new MatchStarted(newId(), VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE,
+                Fixtures.TOURNAMENT_MATCH, GameMode.TEAM, 5,
+                List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue"))));
+        matches.save(match);
+        flushAndClear();
+
+        Match loaded = matches.findById(MATCH).orElseThrow();
+
+        assertThat(loaded.tenantId()).isEqualTo(Fixtures.TENANT);
+        assertThat(loaded.gameTypeId()).isEqualTo(Fixtures.GAME_TYPE);
+        assertThat(loaded.tournamentMatchId()).isEqualTo(Fixtures.TOURNAMENT_MATCH);
+    }
+
+    @Test
+    void aFriendlyMatchIsSavedWithoutTournamentMatch() {
+        matches.save(matchOf(started(1)));
+        flushAndClear();
+
+        assertThat(matches.findById(MATCH).orElseThrow().tournamentMatchId()).isNull();
+    }
+
+    @Test
+    void theLogKeepsTenantGameTypeAndTournamentMatchOfTheStart() {
+        MatchStarted inTournament = new MatchStarted(newId(), VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT,
+                Fixtures.GAME_TYPE, Fixtures.TOURNAMENT_MATCH, GameMode.TEAM, 5,
+                List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue")));
+        events.save(inTournament);
+        flushAndClear();
+
+        assertThat(events.findByMatchId(VENUE, MATCH)).containsExactly(inTournament);
     }
 
     @Test

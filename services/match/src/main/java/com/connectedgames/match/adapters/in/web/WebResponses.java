@@ -26,11 +26,12 @@ final class WebResponses {
         }
     }
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    record MatchResponse(UUID id,UUID tableId, UUID venueId, MatchStatus status, GameMode mode, int pointsToWin,
+    record MatchResponse(UUID id,UUID tableId, UUID venueId, UUID gameTypeId, UUID tournamentMatchId, MatchStatus status, GameMode mode, int pointsToWin,
                         List<MatchSideResponse> sides,Side winnerSide,Instant startedAt, Instant endedAt)
     {
         static MatchResponse from(Match m){
-            return new MatchResponse(m.id().value(), m.tableId().value(), m.venueId().value(), m.status(), m.mode(),
+            return new MatchResponse(m.id().value(), m.tableId().value(), m.venueId().value(), m.gameTypeId().value(),
+                    m.tournamentMatchId() == null ? null : m.tournamentMatchId().value(), m.status(), m.mode(),
                     m.pointsToWin(), m.sides().stream().map(MatchSideResponse::from).toList(), m.winnerSide(),
                     m.startedAt(), m.endedAt());
         }

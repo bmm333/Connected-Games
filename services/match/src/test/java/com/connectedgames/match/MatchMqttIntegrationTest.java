@@ -72,7 +72,7 @@ class MatchMqttIntegrationTest {
     private UUID publishStart(int seq) throws Exception {
         UUID id = UUID.randomUUID();
         publish(topic(), event(id, seq, "MatchStarted",
-                "{\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}"));
+                "{\"gameTypeId\":\"00000000-0000-4000-8000-0000000000b1\",\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}"));
         return id;
     }
 
@@ -110,6 +110,16 @@ class MatchMqttIntegrationTest {
         assertThat(ack.get("acknowledged").get(0).asString()).isEqualTo(started.toString());
         assertThat(ack.get("rejected")).isEmpty();
         assertThat(savedMatch().status()).isEqualTo(MatchStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void theTenantAndTheGameTypeOfTheHubAreKept() throws Exception {
+        publishStart(1);
+        nextAck();
+
+        assertThat(savedMatch().tenantId().value()).isEqualTo("acme");
+        assertThat(savedMatch().gameTypeId().value().toString()).isEqualTo("00000000-0000-4000-8000-0000000000b1");
+        assertThat(savedMatch().tournamentMatchId()).isNull();
     }
 
     @Test
@@ -167,11 +177,11 @@ class MatchMqttIntegrationTest {
         // the parser accepts it, but PostgreSQL does not accept a NUL character in a text column
         UUID poison = UUID.randomUUID();
         publish(topic(), event(poison, 1, "MatchStarted",
-                "{\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\",\"displayName\":\"bad\\u0000name\"},{\"side\":\"BLUE\"}]}"));
+                "{\"gameTypeId\":\"00000000-0000-4000-8000-0000000000b1\",\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\",\"displayName\":\"bad\\u0000name\"},{\"side\":\"BLUE\"}]}"));
         UUID otherMatch = UUID.randomUUID();
         UUID good = UUID.randomUUID();
         publish("venues/%s/tables/%s/matches/%s/events".formatted(venue, table, otherMatch),
-                event(good, 1, "MatchStarted", "{\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}")
+                event(good, 1, "MatchStarted", "{\"gameTypeId\":\"00000000-0000-4000-8000-0000000000b1\",\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}")
                         .replace(match.toString(), otherMatch.toString()));
 
         JsonNode ack = nextAck();

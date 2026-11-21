@@ -2,9 +2,12 @@ package com.connectedgames.match.adapters.out.persistence;
 
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
+import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.Side;
 import com.connectedgames.match.domain.TableId;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.event.GoalScored;
@@ -17,6 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 
 final class EventPayloads {
@@ -27,7 +31,8 @@ final class EventPayloads {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
-    record StartedPayload(GameMode mode, int pointsToWin, List<SidePayload> sides) {}
+    record StartedPayload(String tenantId, UUID gameTypeId, UUID tournamentMatchId, GameMode mode, int pointsToWin,
+                          List<SidePayload> sides) {}
     record SidePayload(Side side, String participantId, String displayName) {}
     record GoalPayload(Side side) {}
     record EndedPayload(EndReason reason, List<ScorePayload> finalScore, Side winnerSide) {}
@@ -46,7 +51,8 @@ final class EventPayloads {
 
     static String write(MatchEvent event) {
         Object payload = switch (event) {
-            case MatchStarted e -> new StartedPayload(e.mode(), e.pointsToWin(),
+            case MatchStarted e -> new StartedPayload(e.tenantId().value(), e.gameTypeId().value(),
+                    e.tournamentMatchId() == null ? null : e.tournamentMatchId().value(), e.mode(), e.pointsToWin(),
                     e.sides().stream().map(s -> new SidePayload(s.side(), s.participantId(), s.displayName())).toList());
             case GoalScored e -> new GoalPayload(e.side());
             case MatchEnded e -> new EndedPayload(e.reason(),
@@ -60,7 +66,10 @@ final class EventPayloads {
         return switch (type) {
             case STARTED -> {
                 StartedPayload p = JSON.readValue(json, StartedPayload.class);
-                yield new MatchStarted(id, venueId, tableId, matchId, seq, occurredAt, p.mode(), p.pointsToWin(),
+                yield new MatchStarted(id, venueId, tableId, matchId, seq, occurredAt,
+                        new TenantId(p.tenantId()), new GameTypeId(p.gameTypeId()),
+                        p.tournamentMatchId() == null ? null : new TournamentMatchId(p.tournamentMatchId()),
+                        p.mode(), p.pointsToWin(),
                         p.sides().stream().map(s -> new SideSetup(s.side(), s.participantId(), s.displayName())).toList());
             }
             case GOAL -> new GoalScored(id, venueId, tableId, matchId, seq, occurredAt,

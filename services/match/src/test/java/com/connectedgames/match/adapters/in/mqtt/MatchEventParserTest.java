@@ -2,7 +2,10 @@ package com.connectedgames.match.adapters.in.mqtt;
 
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
+import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.Side;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.event.GoalScored;
 import com.connectedgames.match.domain.event.MatchEnded;
@@ -22,6 +25,8 @@ class MatchEventParserTest {
     static final UUID VENUE = UUID.randomUUID();
     static final UUID TABLE = UUID.randomUUID();
     static final UUID MATCH = UUID.randomUUID();
+    static final UUID GAME_TYPE = UUID.randomUUID();
+    static final UUID TOURNAMENT_MATCH = UUID.randomUUID();
 
     private final MatchEventParser parser = new MatchEventParser();
 
@@ -35,18 +40,64 @@ class MatchEventParserTest {
     @Test
     void readsAMatchStarted() {
         MatchEvent event = parser.parse(envelope("MatchStarted", 1, """
-                {"mode":"INDIVIDUAL","pointsToWin":5,"sides":[
-                  {"side":"RED","participantId":"p1","displayName":"Ann"},{"side":"BLUE"}]}"""));
+                {"gameTypeId":"%s","tournamentMatchId":"%s","mode":"INDIVIDUAL","pointsToWin":5,"sides":[
+                  {"side":"RED","participantId":"p1","displayName":"Ann"},{"side":"BLUE"}]}""".formatted(GAME_TYPE, TOURNAMENT_MATCH)));
 
         MatchStarted started = (MatchStarted) event;
         assertThat(started.id()).isEqualTo(new EventId(EVENT));
         assertThat(started.seq()).isEqualTo(1);
         assertThat(started.occurredAt()).isEqualTo(Instant.parse("2026-11-16T20:00:00Z"));
+        assertThat(started.tenantId()).isEqualTo(new TenantId("acme"));
+        assertThat(started.gameTypeId()).isEqualTo(new GameTypeId(GAME_TYPE));
+        assertThat(started.tournamentMatchId()).isEqualTo(new TournamentMatchId(TOURNAMENT_MATCH));
         assertThat(started.mode()).isEqualTo(GameMode.INDIVIDUAL);
         assertThat(started.pointsToWin()).isEqualTo(5);
         assertThat(started.sides()).hasSize(2);
         assertThat(started.sides().get(0).participantId()).isEqualTo("p1");
         assertThat(started.sides().get(1).participantId()).isNull();
+    }
+
+    @Test
+    void aFriendlyMatchHasNoTournamentMatch() {
+        MatchStarted started = (MatchStarted) parser.parse(envelope("MatchStarted", 1, startedPayload(true)));
+
+        assertThat(started.tournamentMatchId()).isNull();
+    }
+
+    @Test
+    void aMatchStartedWithoutGameTypeIsUnreadableButKeepsTheId() {
+        assertThatThrownBy(() -> parser.parse(envelope("MatchStarted", 1, startedPayload(false))))
+                .isInstanceOfSatisfying(UnreadableMessageException.class, e -> {
+                    assertThat(e.eventId()).isEqualTo(new EventId(EVENT));
+                    assertThat(e.getMessage()).contains("gameTypeId");
+                });
+    }
+
+    @Test
+    void aMatchStartedWithoutTenantIsUnreadable() {
+        String json = envelope("MatchStarted", 1, startedPayload(true)).replace("\"tenantId\":\"acme\",", "");
+
+        assertThatThrownBy(() -> parser.parse(json)).isInstanceOf(UnreadableMessageException.class);
+    }
+
+    @Test
+    void aBlankTenantIsUnreadable() {
+        String json = envelope("MatchStarted", 1, startedPayload(true)).replace("\"acme\"", "\"  \"");
+
+        assertThatThrownBy(() -> parser.parse(json)).isInstanceOf(UnreadableMessageException.class);
+    }
+
+    @Test
+    void theGameTypeIsNotNeededByAGoal() {
+        GoalScored goal = (GoalScored) parser.parse(envelope("GoalScored", 2, "{\"side\":\"RED\"}"));
+
+        assertThat(goal.side()).isEqualTo(Side.RED);
+    }
+
+    private static String startedPayload(boolean withGameType) {
+        String gameType = withGameType ? "\"gameTypeId\":\"%s\",".formatted(GAME_TYPE) : "";
+        return "{" + gameType + "\"mode\":\"TEAM\",\"pointsToWin\":5,"
+                + "\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}";
     }
 
     @Test
