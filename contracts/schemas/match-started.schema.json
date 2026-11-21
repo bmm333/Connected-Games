@@ -9,8 +9,10 @@
         "type": { "const": "MatchStarted" },
         "payload": {
           "type": "object",
-          "required": ["mode", "pointsToWin", "sides"],
+          "required": ["gameTypeId","mode", "pointsToWin", "sides"],
           "properties": {
+            "gameTypeId": {"type": "string","format":"uuid","description": "Game type of the table when the match started: kept here so a later change of the table does not rewrite the history"},
+            "tournamentMatchId": {"type":"string","format":"uuid","description": "Match of a tournament bracket played by this match, chosen by the operator in the console: missing for friendly or offline matches"},
             "mode": { "enum": ["INDIVIDUAL", "TEAM"] },
             "pointsToWin": { "type": "integer", "minimum": 1 },
             "sides": {
