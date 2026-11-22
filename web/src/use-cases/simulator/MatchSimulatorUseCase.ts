@@ -4,6 +4,7 @@ import type {
   MatchEventEnvelope,
   MatchEventPublisher,
   MatchSide,
+  MqttConnectionStatus,
   SimulatorTable,
 } from '@domain/simulator'
 import { createUuidV7 } from '@domain/simulator'
@@ -24,6 +25,7 @@ export interface MatchSimulatorUseCase {
   scoreGoal(tableId: string, side: MatchSide): Promise<readonly MatchEventEnvelope[]>
   endMatch(tableId: string, reason?: MatchEndReason): Promise<MatchEventEnvelope>
   subscribeAcks(venueId: string, onAck: (payload: unknown) => void): Promise<() => Promise<void>>
+  subscribeConnectionState(onState: (status: MqttConnectionStatus) => void): () => void
 }
 
 const topicFor = (table: SimulatorTable, matchId: string) =>
@@ -109,6 +111,7 @@ export function createMatchSimulatorUseCase(
       return finishMatch(state, reason)
     },
     subscribeAcks: (venueId, onAck) => publisher.subscribeAck(venueId, onAck),
+    subscribeConnectionState: (onState) => publisher.subscribeConnectionState(onState),
   }
 
   async function finishMatch(state: MatchState, reason: MatchEndReason) {

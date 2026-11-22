@@ -3,6 +3,7 @@ import type { GameType, Table, Venue } from '@domain/catalog/TableLookup'
 export type MatchSide = 'RED' | 'BLUE'
 export type MatchEventType = 'MatchStarted' | 'GoalScored' | 'MatchEnded'
 export type MatchEndReason = 'SCORE_REACHED' | 'TIME_EXPIRED' | 'CANCELLED'
+export type MqttConnectionStatus = 'offline' | 'connecting' | 'connected' | 'reconnecting' | 'error'
 
 export interface MatchStartedPayload {
   readonly gameTypeId: string
@@ -61,4 +62,5 @@ export interface MatchEventPublisher {
   connect(): Promise<void>
   publish(topic: string, event: MatchEventEnvelope): Promise<void>
   subscribeAck(venueId: string, onAck: (payload: unknown) => void): Promise<() => Promise<void>>
+  subscribeConnectionState(onState: (status: MqttConnectionStatus) => void): () => void
 }
