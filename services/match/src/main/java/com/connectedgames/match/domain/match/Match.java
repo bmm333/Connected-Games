@@ -24,12 +24,12 @@ import com.connectedgames.match.domain.event.SideScore;
 /**
  * A match as the cloud sees it: always rebuilt from the events received, so the order of arrival does not matter.
  * tenantId, gameTypeId and tournamentMatchId come from MatchStarted and never change. tournamentMatchId is null
- * for a friendly or offline match.
+ * for a friendly or offline match. endReason is null until the match is closed.
  */
 public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenantId, GameTypeId gameTypeId,
                     TournamentMatchId tournamentMatchId, MatchStatus status,
                     GameMode mode, int pointsToWin, List<MatchSide> sides,
-                    Side winnerSide, Instant startedAt, Instant endedAt) {
+                    Side winnerSide, EndReason endReason, Instant startedAt, Instant endedAt) {
 
     /** Rebuilds the match from what arrived, in any order. */
     public static Optional<Match> replay(Collection<MatchEvent> events) {
@@ -48,7 +48,7 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenan
                     .toList();
         return new Match(event.matchId(),event.venueId(),event.tableId(),event.tenantId(),event.gameTypeId(),
                         event.tournamentMatchId(),MatchStatus.IN_PROGRESS,
-                        event.mode(),event.pointsToWin(),sides,null,event.occurredAt(),null);
+                        event.mode(),event.pointsToWin(),sides,null,null,event.occurredAt(),null);
     }
 
     Match apply(MatchEvent event) {
@@ -68,7 +68,7 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenan
         List<MatchSide> updated = sides.stream().map(s->s.side()==side ? 
                              new MatchSide(s.side(), s.participantId(), s.displayName(), s.score()+1) : s)
                         .toList();
-        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,status,mode,pointsToWin,updated,winnerSide,startedAt,endedAt);
+        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,status,mode,pointsToWin,updated,winnerSide,endReason,startedAt,endedAt);
     }
     
     private Match ended(MatchEnded event)
@@ -77,7 +77,7 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenan
         List<MatchSide> scored= sides.stream()
             .map(s -> new MatchSide(s.side(),s.participantId(),s.displayName(),scoreIn(event.finalScore(),s.side())))
             .toList();
-        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,finalStatus,mode,pointsToWin,scored,event.winnerSide(),startedAt,event.occurredAt());
+        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,finalStatus,mode,pointsToWin,scored,event.winnerSide(),event.reason(),startedAt,event.occurredAt());
     }
     public boolean isClosed(){
         return status!=MatchStatus.IN_PROGRESS;

@@ -4,17 +4,18 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-import org.hibernate.annotations.TenantId;
-
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
 import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
+import com.connectedgames.match.domain.Side;
 import com.connectedgames.match.domain.TableId;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
+import com.connectedgames.match.domain.match.Match;
 import com.connectedgames.match.domain.match.MatchSide;
-import com.fasterxml.jackson.databind.deser.DataFormatReaders.Match;
 
 public record MatchCompleted(EventId eventId,TenantId tenantId,VenueId venueId,TableId tableId,MatchId matchId,
 GameTypeId gameTypeId,TournamentMatchId tournamentMatchId,GameMode mode,int pointsToWin,Instant startedAt,Instant endedAt,

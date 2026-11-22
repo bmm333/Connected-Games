@@ -1,5 +1,12 @@
 package com.connectedgames.match.application;
 
+import java.time.Clock;
+
+import com.connectedgames.match.application.port.in.PublishMatchCompletedUseCase;
+import com.connectedgames.match.application.port.out.MatchCompleted;
+import com.connectedgames.match.application.port.out.MatchCompletedOutbox;
+import com.connectedgames.match.application.port.out.MatchCompletedPublisher;
+
 public final class PublishMatchCompletedService implements PublishMatchCompletedUseCase {
 
     static final int BATCH = 100;

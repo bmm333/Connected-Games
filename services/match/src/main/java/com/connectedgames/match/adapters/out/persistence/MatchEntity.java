@@ -8,6 +8,7 @@ import com.connectedgames.match.domain.TableId;
 import com.connectedgames.match.domain.TenantId;
 import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
+import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.match.Match;
 import com.connectedgames.match.domain.match.MatchStatus;
 import jakarta.persistence.CollectionTable;
@@ -45,6 +46,8 @@ class MatchEntity {
     private int pointsToWin;
     @Enumerated(EnumType.STRING)
     private Side winnerSide;
+    @Enumerated(EnumType.STRING)
+    private EndReason endReason;
     private Instant startedAt;
     private Instant endedAt;
 
@@ -69,6 +72,7 @@ class MatchEntity {
         row.mode = match.mode();
         row.pointsToWin = match.pointsToWin();
         row.winnerSide = match.winnerSide();
+        row.endReason = match.endReason();
         row.startedAt = match.startedAt();
         row.endedAt = match.endedAt();
         row.sides = new ArrayList<>(match.sides().stream().map(MatchSideEmbeddable::from).toList());
@@ -79,6 +83,6 @@ class MatchEntity {
         return new Match(new MatchId(id), new VenueId(venueId), new TableId(tableId), new TenantId(tenantId),
                 new GameTypeId(gameTypeId), tournamentMatchId == null ? null : new TournamentMatchId(tournamentMatchId),
                 status, mode, pointsToWin,
-                sides.stream().map(MatchSideEmbeddable::toDomain).toList(), winnerSide, startedAt, endedAt);
+                sides.stream().map(MatchSideEmbeddable::toDomain).toList(), winnerSide, endReason, startedAt, endedAt);
     }
 }
