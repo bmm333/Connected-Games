@@ -83,6 +83,11 @@ export interface components {
             tableId: string;
             /** Format: uuid */
             venueId: string;
+            /** Format: uuid */
+            gameTypeId: string;
+            /** Format: uuid */
+            /** @description Match of a tournament bracket played by this match, missing for friendly matches */
+            tournamentMatchId?: string;
             status: components["schemas"]["MatchStatus"];
             mode: components["schemas"]["GameMode"];
             pointsToWin: number;

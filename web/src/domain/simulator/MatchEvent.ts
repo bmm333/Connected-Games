@@ -4,6 +4,40 @@ export type MatchSide = 'RED' | 'BLUE'
 export type MatchEventType = 'MatchStarted' | 'GoalScored' | 'MatchEnded'
 export type MatchEndReason = 'SCORE_REACHED' | 'TIME_EXPIRED' | 'CANCELLED'
 
+export interface MatchStartedPayload {
+  readonly gameTypeId: string
+  readonly tournamentMatchId?: string
+  readonly mode: 'INDIVIDUAL' | 'TEAM'
+  readonly pointsToWin: number
+  readonly sides: readonly {
+    readonly side: MatchSide
+    readonly participantId?: string
+    readonly displayName?: string
+  }[]
+}
+
+export interface MatchCompleted {
+  readonly eventId: string
+  readonly tenantId: string
+  readonly venueId: string
+  readonly tableId: string
+  readonly matchId: string
+  readonly gameTypeId: string
+  readonly tournamentMatchId?: string
+  readonly mode: 'INDIVIDUAL' | 'TEAM'
+  readonly pointsToWin: number
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly reason: MatchEndReason
+  readonly winnerSide?: MatchSide
+  readonly sides: readonly {
+    readonly side: MatchSide
+    readonly participantId?: string
+    readonly displayName?: string
+    readonly score: number
+  }[]
+}
+
 export interface MatchEventEnvelope {
   readonly eventId: string
   readonly tenantId: string

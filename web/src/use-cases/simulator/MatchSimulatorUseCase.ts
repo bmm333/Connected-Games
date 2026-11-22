@@ -82,6 +82,7 @@ export function createMatchSimulatorUseCase(
       }
       matches.set(table.table.id, state)
       return publish(state, createEvent(state, 'MatchStarted', {
+        gameTypeId: table.gameType.id,
         mode: table.gameType.mode,
         pointsToWin: table.gameType.pointsToWin,
         sides: [
