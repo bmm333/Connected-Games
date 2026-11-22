@@ -1,5 +1,6 @@
 package com.connectedgames.match.adapters.in.web;
 
+import com.connectedgames.match.Fixtures;
 import com.connectedgames.match.application.MatchNotFoundException;
 import com.connectedgames.match.application.port.in.GetCurrentMatchUseCase;
 import com.connectedgames.match.application.port.in.GetMatchTimelineUseCase;
@@ -38,6 +39,7 @@ class StubUseCases {
     static final Instant START = Instant.parse("2026-11-16T20:00:00Z");
 
     static final MatchStarted STARTED = new MatchStarted(new EventId(UUID.randomUUID()), VENUE, TABLE, MATCH, 1, START,
+            Fixtures.TENANT, Fixtures.GAME_TYPE, null,
             GameMode.TEAM, 5, List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, "team-7", "Lightning")));
     static final GoalScored GOAL = new GoalScored(new EventId(UUID.randomUUID()), VENUE, TABLE, MATCH, 2,
             START.plusSeconds(60), RED);
@@ -47,7 +49,8 @@ class StubUseCases {
             START.plusSeconds(600), EndReason.SCORE_REACHED,
             List.of(new SideScore(RED, 5), new SideScore(BLUE, 3)), RED);
     static final Match COMPLETED = Match.replay(List.of(
-            new MatchStarted(new EventId(UUID.randomUUID()), VENUE, TABLE, FINISHED, 1, START, GameMode.TEAM, 5,
+            new MatchStarted(new EventId(UUID.randomUUID()), VENUE, TABLE, FINISHED, 1, START, Fixtures.TENANT, Fixtures.GAME_TYPE,
+                    Fixtures.TOURNAMENT_MATCH, GameMode.TEAM, 5,
                     List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue"))),
             ENDED)).orElseThrow();
 

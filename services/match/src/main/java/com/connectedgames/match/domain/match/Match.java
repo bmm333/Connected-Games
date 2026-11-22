@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.Optional;
 
 import com.connectedgames.match.domain.GameMode;
+import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.Side;
 import com.connectedgames.match.domain.TableId;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.event.GoalScored;
@@ -18,8 +21,13 @@ import com.connectedgames.match.domain.event.MatchEvent;
 import com.connectedgames.match.domain.event.MatchStarted;
 import com.connectedgames.match.domain.event.SideScore;
 
-/** A match as the cloud sees it: always rebuilt from the events received, so the order of arrival does not matter. */
-public record Match(MatchId id, VenueId venueId, TableId tableId, MatchStatus status,
+/**
+ * A match as the cloud sees it: always rebuilt from the events received, so the order of arrival does not matter.
+ * tenantId, gameTypeId and tournamentMatchId come from MatchStarted and never change. tournamentMatchId is null
+ * for a friendly or offline match.
+ */
+public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenantId, GameTypeId gameTypeId,
+                    TournamentMatchId tournamentMatchId, MatchStatus status,
                     GameMode mode, int pointsToWin, List<MatchSide> sides,
                     Side winnerSide, Instant startedAt, Instant endedAt) {
 
@@ -38,7 +46,8 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, MatchStatus st
         List<MatchSide> sides=event.sides().stream()
                     .map(s -> new MatchSide(s.side(),s.participantId(),s.displayName(),0))
                     .toList();
-        return new Match(event.matchId(),event.venueId(),event.tableId(),MatchStatus.IN_PROGRESS,
+        return new Match(event.matchId(),event.venueId(),event.tableId(),event.tenantId(),event.gameTypeId(),
+                        event.tournamentMatchId(),MatchStatus.IN_PROGRESS,
                         event.mode(),event.pointsToWin(),sides,null,event.occurredAt(),null);
     }
 
@@ -59,7 +68,7 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, MatchStatus st
         List<MatchSide> updated = sides.stream().map(s->s.side()==side ? 
                              new MatchSide(s.side(), s.participantId(), s.displayName(), s.score()+1) : s)
                         .toList();
-        return new Match(id,venueId,tableId,status,mode,pointsToWin,updated,winnerSide,startedAt,endedAt);
+        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,status,mode,pointsToWin,updated,winnerSide,startedAt,endedAt);
     }
     
     private Match ended(MatchEnded event)
@@ -68,7 +77,7 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, MatchStatus st
         List<MatchSide> scored= sides.stream()
             .map(s -> new MatchSide(s.side(),s.participantId(),s.displayName(),scoreIn(event.finalScore(),s.side())))
             .toList();
-        return new Match(id,venueId,tableId,finalStatus,mode,pointsToWin,scored,event.winnerSide(),startedAt,event.occurredAt());
+        return new Match(id,venueId,tableId,tenantId,gameTypeId,tournamentMatchId,finalStatus,mode,pointsToWin,scored,event.winnerSide(),startedAt,event.occurredAt());
     }
 
     public int scoreOf(Side side) {

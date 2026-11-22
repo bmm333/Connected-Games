@@ -1,5 +1,7 @@
 package com.connectedgames.match.adapters.in.web;
 
+import com.connectedgames.match.Fixtures;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -39,6 +41,30 @@ class MatchControllerTest {
                 .andExpect(jsonPath("$.mode").value("TEAM"))
                 .andExpect(jsonPath("$.pointsToWin").value(5))
                 .andExpect(jsonPath("$.startedAt").value("2026-11-16T20:00:00Z"));
+    }
+
+    @Test
+    void showsTheGameTypeOfTheMatch() throws Exception {
+        mvc.perform(get("/matches/{id}", MATCH.value()))
+                .andExpect(jsonPath("$.gameTypeId").value(Fixtures.GAME_TYPE.value().toString()));
+    }
+
+    @Test
+    void aFriendlyMatchHasNoTournamentMatchInTheAnswer() throws Exception {
+        mvc.perform(get("/matches/{id}", MATCH.value()))
+                .andExpect(jsonPath("$.tournamentMatchId").doesNotExist());
+    }
+
+    @Test
+    void aTournamentMatchShowsWhichOne() throws Exception {
+        mvc.perform(get("/matches/{id}", FINISHED.value()))
+                .andExpect(jsonPath("$.tournamentMatchId").value(Fixtures.TOURNAMENT_MATCH.value().toString()));
+    }
+
+    @Test
+    void theTenantIsNotInTheAnswer() throws Exception {
+        mvc.perform(get("/matches/{id}", MATCH.value()))
+                .andExpect(jsonPath("$.tenantId").doesNotExist());
     }
 
     @Test

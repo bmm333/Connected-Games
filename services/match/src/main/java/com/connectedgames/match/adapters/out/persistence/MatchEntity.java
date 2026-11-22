@@ -1,9 +1,12 @@
 package com.connectedgames.match.adapters.out.persistence;
 
 import com.connectedgames.match.domain.GameMode;
+import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.Side;
 import com.connectedgames.match.domain.TableId;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.match.Match;
 import com.connectedgames.match.domain.match.MatchStatus;
@@ -32,6 +35,9 @@ class MatchEntity {
     private UUID id;
     private UUID venueId;
     private UUID tableId;
+    private String tenantId;
+    private UUID gameTypeId;
+    private UUID tournamentMatchId;
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
     @Enumerated(EnumType.STRING)
@@ -56,6 +62,9 @@ class MatchEntity {
         row.id = match.id().value();
         row.venueId = match.venueId().value();
         row.tableId = match.tableId().value();
+        row.tenantId = match.tenantId().value();
+        row.gameTypeId = match.gameTypeId().value();
+        row.tournamentMatchId = match.tournamentMatchId() == null ? null : match.tournamentMatchId().value();
         row.status = match.status();
         row.mode = match.mode();
         row.pointsToWin = match.pointsToWin();
@@ -67,7 +76,9 @@ class MatchEntity {
     }
 
     Match toDomain() {
-        return new Match(new MatchId(id), new VenueId(venueId), new TableId(tableId), status, mode, pointsToWin,
+        return new Match(new MatchId(id), new VenueId(venueId), new TableId(tableId), new TenantId(tenantId),
+                new GameTypeId(gameTypeId), tournamentMatchId == null ? null : new TournamentMatchId(tournamentMatchId),
+                status, mode, pointsToWin,
                 sides.stream().map(MatchSideEmbeddable::toDomain).toList(), winnerSide, startedAt, endedAt);
     }
 }

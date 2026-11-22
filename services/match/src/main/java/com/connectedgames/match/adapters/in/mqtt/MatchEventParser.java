@@ -6,9 +6,12 @@ import java.util.UUID;
 
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
+import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.Side;
 import com.connectedgames.match.domain.TableId;
+import com.connectedgames.match.domain.TenantId;
+import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.event.GoalScored;
@@ -28,9 +31,9 @@ final class MatchEventParser {
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record Envelope(UUID eventId,UUID venueId,UUID tableId,UUID matchId,int seq,String type,Instant occurredAt,JsonNode payload)
+    private record Envelope(UUID eventId,String tenantId,UUID venueId,UUID tableId,UUID matchId,int seq,String type,Instant occurredAt,JsonNode payload)
     {}
-    private record StartedPayload(GameMode mode,int pointsToWin,List<SidePayload> sides){}
+    private record StartedPayload(UUID gameTypeId,UUID tournamentMatchId,GameMode mode,int pointsToWin,List<SidePayload> sides){}
     private record SidePayload(Side side,String participantId,String displayName){}
     private record GoalPayload(Side side){}
     private record EndedPayload(EndReason reason,List<ScorePayload> finalScore,Side winnerSide){}
@@ -62,7 +65,14 @@ final class MatchEventParser {
         return switch (e.type()){
             case "MatchStarted" -> {
                 StartedPayload p = JSON.treeToValue(e.payload(), StartedPayload.class);
-                yield new MatchStarted(id, venue, table, match, e.seq(), e.occurredAt(), p.mode(), p.pointsToWin(),
+                if(e.tenantId()==null || p.gameTypeId()==null)
+                {
+                    throw new IllegalArgumentException("tenantId and gameTypeId are required in a MatchStarted");
+                }
+                TournamentMatchId tournamentMatch=p.tournamentMatchId()==null ? null : new TournamentMatchId(p.tournamentMatchId());
+                yield new MatchStarted(id, venue, table, match, e.seq(), e.occurredAt(),
+                        new TenantId(e.tenantId()), new GameTypeId(p.gameTypeId()), tournamentMatch,
+                        p.mode(), p.pointsToWin(),
                         p.sides().stream().map(s -> new SideSetup(s.side(), s.participantId(), s.displayName())).toList());
             }
             case "GoalScored" -> new GoalScored(id, venue, table, match, e.seq(), e.occurredAt(),

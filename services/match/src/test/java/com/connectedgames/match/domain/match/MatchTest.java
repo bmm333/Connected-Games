@@ -1,5 +1,6 @@
 package com.connectedgames.match.domain.match;
 
+import com.connectedgames.match.Fixtures;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ class MatchTest {
     private static EventId newId() { return new EventId(UUID.randomUUID()); }
 
     private static MatchStarted started(int seq) {
-        return new MatchStarted(newId(), VENUE, TABLE, MATCH, seq, NOW, GameMode.INDIVIDUAL, 5,
+        return new MatchStarted(newId(), VENUE, TABLE, MATCH, seq, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5,
                 List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue")));
     }
 
@@ -53,6 +54,27 @@ class MatchTest {
         List<MatchEvent> shuffled = List.of(inOrder.get(3), inOrder.get(0), inOrder.get(2), inOrder.get(1));
 
         assertThat(Match.replay(shuffled)).isEqualTo(Match.replay(inOrder));
+    }
+
+    @Test
+    void theMatchKeepsWhatTheStartSaidAboutTenantGameTypeAndTournament() {
+        MatchStarted inTournament = new MatchStarted(newId(), VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT,
+                Fixtures.GAME_TYPE, Fixtures.TOURNAMENT_MATCH, GameMode.TEAM, 5,
+                List.of(new SideSetup(RED, null, "Red"), new SideSetup(BLUE, null, "Blue")));
+
+        Match match = Match.replay(List.of(inTournament, goal(2, RED), ended(3, 5, 3))).orElseThrow();
+
+        assertThat(match.tenantId()).isEqualTo(Fixtures.TENANT);
+        assertThat(match.gameTypeId()).isEqualTo(Fixtures.GAME_TYPE);
+        assertThat(match.tournamentMatchId()).isEqualTo(Fixtures.TOURNAMENT_MATCH);
+    }
+
+    @Test
+    void aFriendlyMatchHasNoTournamentMatch() {
+        Match match = Match.replay(List.of(started(1))).orElseThrow();
+
+        assertThat(match.tenantId()).isEqualTo(Fixtures.TENANT);
+        assertThat(match.tournamentMatchId()).isNull();
     }
 
     @Test

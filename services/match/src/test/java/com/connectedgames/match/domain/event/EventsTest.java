@@ -1,5 +1,7 @@
 package com.connectedgames.match.domain.event;
 
+import com.connectedgames.match.Fixtures;
+import com.connectedgames.match.domain.TenantId;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +47,29 @@ class EventsTest {
     @Test
     void aStartNeedsAtLeastOnePointToWin() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, GameMode.INDIVIDUAL, 0, BOTH_SIDES));
+                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 0, BOTH_SIDES));
+    }
+
+    @Test
+    void aStartNeedsATenantAndAGameType() {
+        assertThatNullPointerException().isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW,
+                null, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, BOTH_SIDES));
+        assertThatNullPointerException().isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW,
+                Fixtures.TENANT, null, null, GameMode.INDIVIDUAL, 5, BOTH_SIDES));
+    }
+
+    @Test
+    void aStartMayHaveNoTournamentMatch() {
+        MatchStarted friendly = new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW,
+                Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, BOTH_SIDES);
+
+        assertThat(friendly.tournamentMatchId()).isNull();
+    }
+
+    @Test
+    void aTenantIdCannotBeBlank() {
+        assertThatIllegalArgumentException().isThrownBy(() -> new TenantId(" "));
+        assertThatNullPointerException().isThrownBy(() -> new TenantId(null));
     }
 
     @Test
@@ -53,13 +77,13 @@ class EventsTest {
         List<SideSetup> twoReds = List.of(new SideSetup(RED, null, null), new SideSetup(RED, null, null));
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, GameMode.INDIVIDUAL, 5, twoReds));
+                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, twoReds));
     }
 
     @Test
     void aStartKeepsItsOwnCopyOfTheSides() {
         List<SideSetup> sides = new ArrayList<>(BOTH_SIDES);
-        MatchStarted started = new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, GameMode.INDIVIDUAL, 5, sides);
+        MatchStarted started = new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, sides);
 
         sides.clear();
 
@@ -92,7 +116,7 @@ class EventsTest {
                 new SideSetup(RED, null, null));
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, GameMode.INDIVIDUAL, 5, three));
+                .isThrownBy(() -> new MatchStarted(ID, VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, three));
     }
 
     @Test

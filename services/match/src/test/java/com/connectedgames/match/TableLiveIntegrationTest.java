@@ -106,7 +106,7 @@ class TableLiveIntegrationTest {
         assertThat(screen.poll(1, TimeUnit.SECONDS)).isNull();
 
         publish(1, "MatchStarted",
-                "{\"mode\":\"INDIVIDUAL\",\"pointsToWin\":2,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}");
+                "{\"gameTypeId\":\"00000000-0000-4000-8000-0000000000b1\",\"mode\":\"INDIVIDUAL\",\"pointsToWin\":2,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}");
         JsonNode started = nextOnScreen();
         assertThat(started.get("id").asString()).isEqualTo(match.toString());
         assertThat(started.get("status").asString()).isEqualTo("IN_PROGRESS");
@@ -127,7 +127,7 @@ class TableLiveIntegrationTest {
     @Test
     void aScreenThatOpensDuringTheMatchGetsTheScoreAtOnce() throws Exception {
         publish(1, "MatchStarted",
-                "{\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}");
+                "{\"gameTypeId\":\"00000000-0000-4000-8000-0000000000b1\",\"mode\":\"INDIVIDUAL\",\"pointsToWin\":5,\"sides\":[{\"side\":\"RED\"},{\"side\":\"BLUE\"}]}");
         publish(2, "GoalScored", "{\"side\":\"BLUE\"}");
 
         openTheScreen();
