@@ -20,6 +20,7 @@ export function SimulatorView() {
   const [events, setEvents] = useState<readonly MatchEventEnvelope[]>([])
   const [acks, setAcks] = useState<readonly string[]>([])
   const [mqttStatus, setMqttStatus] = useState<'offline' | 'connecting' | 'connected' | 'reconnecting' | 'error'>('offline')
+  const [mqttConnectionRequested, setMqttConnectionRequested] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => simulator.subscribeConnectionState(setMqttStatus), [simulator])
@@ -67,6 +68,7 @@ export function SimulatorView() {
 
   async function connectMqtt() {
     setError(null)
+    setMqttConnectionRequested(true)
     setMqttStatus('connecting')
     try {
       await simulator.connect()
@@ -137,7 +139,12 @@ export function SimulatorView() {
           </div>
           <div className="flex items-center gap-2">
             <Badge tone={mqttStatus === 'connected' ? 'success' : mqttStatus === 'error' || mqttStatus === 'reconnecting' ? 'warning' : 'neutral'}>{mqttStatus}</Badge>
-            <button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => void connectMqtt()} disabled={mqttStatus === 'connecting' || mqttStatus === 'connected'}>
+            <button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => void connectMqtt()} disabled={
+              mqttStatus === 'connecting' ||
+              mqttStatus === 'connected' ||
+              mqttStatus === 'reconnecting' ||
+              (mqttStatus === 'offline' && mqttConnectionRequested)
+            }>
               {mqttStatus === 'connecting' ? 'Connessione…' : mqttStatus === 'connected' ? 'Connesso' : mqttStatus === 'reconnecting' ? 'Riconnessione…' : 'Connetti MQTT'}
             </button>
           </div>
