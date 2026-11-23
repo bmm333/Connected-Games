@@ -1,0 +1,499 @@
+openapi: 3.1.0
+info:
+  title: Connected Games - Stats API
+  version: 0.1.0
+  description: >-
+    Statistics built from the closed matches published by the match service. Read only.
+    Cancelled matches are not counted. The organization comes from the token: a user only sees the data of its own organization.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: /api/stats
+    description: Through the gateway
+security:
+  - bearerAuth: []
+tags:
+  - name: Leaderboards
+    description: Rankings
+  - name: Participants
+    description: Statistics and history of a player or a team
+  - name: Matches
+    description: Result and detail of a closed match
+  - name: Venues
+    description: Totals of a venue
+
+paths:
+  /leaderboard:
+    get:
+      tags: [Leaderboards]
+      operationId: getLeaderboard
+      summary: Ranking of the participants
+      description: Ordered by wins, then by point difference (pointsFor minus pointsAgainst).
+      parameters:
+        - $ref: '#/components/parameters/VenueIdQuery'
+        - $ref: '#/components/parameters/GameTypeIdQuery'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: The ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /participants/{participantId}/summary:
+    get:
+      tags: [Participants]
+      operationId: getParticipantSummary
+      summary: Totals of a participant, also split by game type
+      parameters:
+        - $ref: '#/components/parameters/ParticipantId'
+        - $ref: '#/components/parameters/VenueIdQuery'
+        - $ref: '#/components/parameters/GameTypeIdQuery'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /participants/{participantId}/matches:
+    get:
+      tags: [Participants]
+      operationId: getParticipantMatches
+      summary: Matches of a participant, newest first
+      parameters:
+        - $ref: '#/components/parameters/ParticipantId'
+        - $ref: '#/components/parameters/VenueIdQuery'
+        - $ref: '#/components/parameters/GameTypeIdQuery'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: The matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParticipantMatch'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  
+  /matches/{matchId}:
+    get:
+      tags: [Matches]
+      operationId: getMatchResult
+      summary: Result of a closed match, with the points one by one
+      parameters:
+        - $ref: '#/components/parameters/MatchId'
+      responses:
+        '200':
+          description: The result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+
+  /venues/{venueId}/summary:
+    get:
+      tags: [Venues]
+      operationId: getVenueSummary
+      summary: Totals of a venue
+      parameters:
+        - $ref: '#/components/parameters/VenueId'
+        - $ref: '#/components/parameters/GameTypeIdQuery'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+      responses:
+        '200':
+          description: Totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ParticipantId:
+      name: participantId
+      in: path
+      required: true
+      description: Team or player, as in MatchCompleted
+      schema:
+        type: string
+    MatchId:
+      name: matchId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VenueId:
+      name: venueId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VenueIdQuery:
+      name: venueId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    GameTypeIdQuery:
+      name: gameTypeId
+      in: query
+      schema:
+        type: string
+        format: uuid
+    From:
+      name: from
+      in: query
+      description: Only matches that ended at or after this instant
+      schema:
+        type: string
+        format: date-time
+    To:
+      name: to
+      in: query
+      description: Only matches that ended before this instant
+      schema:
+        type: string
+        format: date-time
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  responses:
+    Unauthorized:
+      description: Token missing or invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Side:
+      type: string
+      enum: [RED, BLUE]
+    Result:
+      type: string
+      enum: [WIN, LOSS, DRAW]
+    GameMode:
+      type: string
+      enum: [INDIVIDUAL, TEAM]
+    EndReason:
+      type: string
+      enum: [SCORE_REACHED, TIME_EXPIRED]
+
+    Totals:
+      type: object
+      required: [matches, wins, losses, draws, pointsFor, pointsAgainst]
+      properties:
+        matches:
+          type: integer
+          minimum: 0
+        wins:
+          type: integer
+          minimum: 0
+        losses:
+          type: integer
+          minimum: 0
+        draws:
+          type: integer
+          minimum: 0
+        pointsFor:
+          type: integer
+          minimum: 0
+        pointsAgainst:
+          type: integer
+          minimum: 0
+
+    LeaderboardEntry:
+      allOf:
+        - $ref: '#/components/schemas/Totals'
+        - type: object
+          required: [rank, participantId]
+          properties:
+            rank:
+              type: integer
+              minimum: 1
+            participantId:
+              type: string
+            displayName:
+              type: string
+
+    GameTypeTotals:
+      allOf:
+        - $ref: '#/components/schemas/Totals'
+        - type: object
+          required: [gameTypeId]
+          properties:
+            gameTypeId:
+              type: string
+              format: uuid
+
+    ParticipantSummary:
+      allOf:
+        - $ref: '#/components/schemas/Totals'
+        - type: object
+          required: [participantId, byGameType]
+          properties:
+            participantId:
+              type: string
+            displayName:
+              type: string
+            lastMatchAt:
+              type: string
+              format: date-time
+            byGameType:
+              type: array
+              items:
+                $ref: '#/components/schemas/GameTypeTotals'
+
+    ParticipantMatch:
+      type: object
+      required: [matchId, venueId, tableId, gameTypeId, endedAt, durationSeconds, side, result, pointsFor, pointsAgainst]
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        tableId:
+          type: string
+          format: uuid
+        gameTypeId:
+          type: string
+          format: uuid
+        tournamentMatchId:
+          type: string
+          format: uuid
+          description: Missing for friendly matches
+        endedAt:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+          minimum: 0
+        side:
+          $ref: '#/components/schemas/Side'
+        result:
+          $ref: '#/components/schemas/Result'
+        pointsFor:
+          type: integer
+          minimum: 0
+        pointsAgainst:
+          type: integer
+          minimum: 0
+        opponentParticipantId:
+          type: string
+        opponentDisplayName:
+          type: string
+
+    MatchSideResult:
+      type: object
+      required: [side, score]
+      properties:
+        side:
+          $ref: '#/components/schemas/Side'
+        participantId:
+          type: string
+        displayName:
+          type: string
+        score:
+          type: integer
+          minimum: 0
+
+    ScoredPoint:
+      type: object
+      required: [seq, side, occurredAt, redScore, blueScore]
+      properties:
+        seq:
+          type: integer
+          minimum: 1
+        side:
+          $ref: '#/components/schemas/Side'
+        occurredAt:
+          type: string
+          format: date-time
+        redScore:
+          type: integer
+          minimum: 0
+          description: Score of RED right after this point
+        blueScore:
+          type: integer
+          minimum: 0
+          description: Score of BLUE right after this point
+
+    MatchResult:
+      type: object
+      required: [matchId, venueId, tableId, gameTypeId, mode, pointsToWin, reason, startedAt, endedAt, durationSeconds, sides, points, leadChanges]
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        venueId:
+          type: string
+          format: uuid
+        tableId:
+          type: string
+          format: uuid
+        gameTypeId:
+          type: string
+          format: uuid
+        tournamentMatchId:
+          type: string
+          format: uuid
+        mode:
+          $ref: '#/components/schemas/GameMode'
+        pointsToWin:
+          type: integer
+          minimum: 1
+        reason:
+          $ref: '#/components/schemas/EndReason'
+        winnerSide:
+          $ref: '#/components/schemas/Side'
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        durationSeconds:
+          type: integer
+          minimum: 0
+        sides:
+          type: array
+          minItems: 2
+          items:
+            $ref: '#/components/schemas/MatchSideResult'
+        points:
+          type: array
+          description: >-
+            The points the service received, in order. It can be shorter than the final score if the hub
+            did not deliver every event: the score in sides is the one that counts.
+          items:
+            $ref: '#/components/schemas/ScoredPoint'
+        leadChanges:
+          type: integer
+          minimum: 0
+          description: Times the side in the lead changed
+        longestStreak:
+          type: object
+          description: Most points in a row by the same side. Missing if nobody scored.
+          required: [side, length]
+          properties:
+            side:
+              $ref: '#/components/schemas/Side'
+            length:
+              type: integer
+              minimum: 1
+
+    VenueSummary:
+      type: object
+      required: [venueId, matches, totalPoints, averageDurationSeconds, byGameType]
+      properties:
+        venueId:
+          type: string
+          format: uuid
+        matches:
+          type: integer
+          minimum: 0
+        totalPoints:
+          type: integer
+          minimum: 0
+        averageDurationSeconds:
+          type: integer
+          minimum: 0
+        lastMatchAt:
+          type: string
+          format: date-time
+        byGameType:
+          type: array
+          items:
+            type: object
+            required: [gameTypeId, matches, totalPoints, averageDurationSeconds]
+            properties:
+              gameTypeId:
+                type: string
+                format: uuid
+              matches:
+                type: integer
+                minimum: 0
+              totalPoints:
+                type: integer
+                minimum: 0
+              averageDurationSeconds:
+                type: integer
+                minimum: 0
+
+    Problem:
+      type: object
+      description: Error in RFC 9457 format (Spring ProblemDetail)
+      required: [title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+# not final 
+
