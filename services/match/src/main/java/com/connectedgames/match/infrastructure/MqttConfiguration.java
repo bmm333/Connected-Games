@@ -2,9 +2,11 @@ package com.connectedgames.match.infrastructure;
 
 import com.connectedgames.match.adapters.in.mqtt.MatchEventListener;
 import com.connectedgames.match.adapters.out.mqtt.MqttAckPublisher;
+import com.connectedgames.match.adapters.out.mqtt.MqttMatchCompletedPublisher;
 import com.connectedgames.match.application.port.in.AcknowledgeEventUseCase;
 import com.connectedgames.match.application.port.in.RecordMatchEventUseCase;
 import com.connectedgames.match.application.port.out.AckPublisher;
+import com.connectedgames.match.application.port.out.MatchCompletedPublisher;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -65,16 +67,16 @@ class MqttConfiguration {
                 (String) message.getHeaders().get(MqttHeaders.RECEIVED_TOPIC), (String) message.getPayload());
     }
 
-    // ---- acks out: AckPublisher -> channel -> broker
+    // ---- messages out: acks and MatchCompleted -> channel -> broker. One connection, so one client id.
 
     @Bean
-    MessageChannel matchAcksOut() {
+    MessageChannel matchOut() {
         return new DirectChannel();
     }
 
     @Bean
-    @ServiceActivator(inputChannel = "matchAcksOut")
-    MessageHandler matchAcksHandler(MqttPahoClientFactory factory) {
+    @ServiceActivator(inputChannel = "matchOut")
+    MessageHandler matchOutHandler(MqttPahoClientFactory factory) {
         MqttPahoMessageHandler handler = new MqttPahoMessageHandler("match-service-out", factory);
         handler.setAsync(false);
         handler.setDefaultQos(1);
@@ -83,6 +85,11 @@ class MqttConfiguration {
 
     @Bean
     AckPublisher ackPublisher() {
-        return new MqttAckPublisher(matchAcksOut());
+        return new MqttAckPublisher(matchOut());
+    }
+
+    @Bean
+    MatchCompletedPublisher matchCompletedPublisher() {
+        return new MqttMatchCompletedPublisher(matchOut());
     }
 }

@@ -1,7 +1,11 @@
 package com.connectedgames.match.application;
 
 import java.util.Optional;
-
+import java.util.UUID;
+import java.util.function.Supplier;
+import com.connectedgames.match.domain.EventId;
+import com.connectedgames.match.application.port.out.MatchCompleted;
+import com.connectedgames.match.application.port.out.MatchCompletedOutbox;
 import com.connectedgames.match.application.port.in.EventTopic;
 import com.connectedgames.match.application.port.in.RecordMatchEventUseCase;
 import com.connectedgames.match.application.port.in.RecordResult;
@@ -14,10 +18,16 @@ public final class RecordMatchEventService implements RecordMatchEventUseCase {
 
     private final MatchEventRepository events;
     private final MatchRepository matches;
+    private final MatchCompletedOutbox outbox;
+    private final Supplier<UUID> ids;
 
-    public RecordMatchEventService(MatchEventRepository events, MatchRepository matches) {
+    /** ids gives the id of each message written in the outbox. */
+    public RecordMatchEventService(MatchEventRepository events, MatchRepository matches,
+                                    MatchCompletedOutbox outbox,Supplier<UUID> ids) {
         this.events = events;
         this.matches = matches;
+        this.outbox=outbox;
+        this.ids=ids;
     }
 
     @Override
@@ -43,8 +53,20 @@ public final class RecordMatchEventService implements RecordMatchEventUseCase {
         }
         //save event, rebuild match from all its events.
         events.save(event);
-        Match.replay(events.findByMatchId(event.venueId(), event.matchId())).ifPresent(matches::save);
+        Match.replay(events.findByMatchId(event.venueId(), event.matchId())).ifPresent(this::saveAndAnnounce);
         return new RecordResult.Accepted(event.id());
+    }
+
+    /**
+     * A closed match gets its MatchCompleted in the same transaction. Every event of a closed match passes here,
+     * and the outbox keeps only the first message of each match, so a late event does not send it twice.
+     */
+    private void saveAndAnnounce(Match match)
+    {
+        matches.save(match);
+        if(match.isClosed()){
+            outbox.add(MatchCompleted.of(new EventId(ids.get()),match));
+        }
     }
     private static boolean belongsToTheSamePlace(Match match,MatchEvent event)
     {

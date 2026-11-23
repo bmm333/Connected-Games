@@ -78,6 +78,32 @@ class MatchTest {
     }
 
     @Test
+    void aMatchInProgressHasNoEndReasonAndIsNotClosed() {
+        Match match = Match.replay(List.of(started(1), goal(2, RED))).orElseThrow();
+
+        assertThat(match.endReason()).isNull();
+        assertThat(match.isClosed()).isFalse();
+    }
+
+    @Test
+    void aClosedMatchKnowsWhyItEnded() {
+        assertThat(Match.replay(List.of(started(1), ended(2, 5, 3))).orElseThrow().endReason())
+                .isEqualTo(EndReason.SCORE_REACHED);
+        assertThat(Match.replay(List.of(started(1), drawAfterTime(2))).orElseThrow().endReason())
+                .isEqualTo(EndReason.TIME_EXPIRED);
+        Match cancelled = Match.replay(List.of(started(1), cancelled(2))).orElseThrow();
+        assertThat(cancelled.endReason()).isEqualTo(EndReason.CANCELLED);
+        assertThat(cancelled.isClosed()).isTrue();
+    }
+
+    @Test
+    void theFirstEndIsTheOneThatCountsForTheReason() {
+        Match match = Match.replay(List.of(started(1), ended(2, 5, 3), cancelled(3))).orElseThrow();
+
+        assertThat(match.endReason()).isEqualTo(EndReason.SCORE_REACHED);
+    }
+
+    @Test
     void withoutTheStartThereIsNoMatchYet() {
         assertThat(Match.replay(List.of(goal(2, RED)))).isEmpty();
     }

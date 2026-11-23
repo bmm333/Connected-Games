@@ -1,5 +1,7 @@
 package com.connectedgames.match;
 
+import com.connectedgames.match.application.port.out.MatchCompleted;
+import com.connectedgames.match.application.port.out.MatchCompletedOutbox;
 import com.connectedgames.match.application.port.out.MatchRepository;
 import com.connectedgames.match.domain.MatchId;
 import com.connectedgames.match.domain.Side;
@@ -34,6 +36,9 @@ class MatchMqttIntegrationTest {
     @Autowired
     MatchRepository matches;
 
+    @Autowired
+    MatchCompletedOutbox outbox;
+
     @Value("${match.mqtt.url}")
     String brokerUrl;
 
@@ -42,6 +47,7 @@ class MatchMqttIntegrationTest {
     private final UUID table = UUID.randomUUID();
     private final UUID match = UUID.randomUUID();
     private final BlockingQueue<JsonNode> acks = new LinkedBlockingQueue<>();
+    private final BlockingQueue<JsonNode> completed = new LinkedBlockingQueue<>();
     private MqttClient hub;
 
     @BeforeEach
@@ -96,6 +102,25 @@ class MatchMqttIntegrationTest {
         return ack;
     }
 
+    private UUID publishEnd(int seq) throws Exception {
+        UUID id = UUID.randomUUID();
+        publish(topic(), event(id, seq, "MatchEnded",
+                "{\"reason\":\"SCORE_REACHED\",\"finalScore\":[{\"side\":\"RED\",\"score\":5},{\"side\":\"BLUE\",\"score\":3}],\"winnerSide\":\"RED\"}"));
+        return id;
+    }
+
+    /** The MatchCompleted of this test's match: the topic is shared, so messages of other matches are skipped. */
+    private JsonNode nextCompleted() throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < deadline) {
+            JsonNode message = completed.poll(1, TimeUnit.SECONDS);
+            if (message != null && message.get("matchId").asString().equals(match.toString())) {
+                return message;
+            }
+        }
+        throw new AssertionError("no MatchCompleted of the match within 10 seconds");
+    }
+
     private Match savedMatch() {
         return matches.findById(new MatchId(match)).orElseThrow();
     }
@@ -120,6 +145,73 @@ class MatchMqttIntegrationTest {
         assertThat(savedMatch().tenantId().value()).isEqualTo("acme");
         assertThat(savedMatch().gameTypeId().value().toString()).isEqualTo("00000000-0000-4000-8000-0000000000b1");
         assertThat(savedMatch().tournamentMatchId()).isNull();
+    }
+
+    @Test
+    void aClosedMatchIsPublishedForStatsAndTournament() throws Exception {
+        hub.subscribe("platform/matches/completed", 1, (topic, message) ->
+                completed.add(JSON.readTree(new String(message.getPayload(), StandardCharsets.UTF_8))));
+        publishStart(1);
+        nextAck();
+        publishGoal(2, "RED");
+        nextAck();
+        assertThat(completed).as("nothing while the match is in progress").isEmpty();
+
+        publishEnd(3);
+        nextAck();
+        JsonNode message = nextCompleted();
+
+        assertThat(message.get("tenantId").asString()).isEqualTo("acme");
+        assertThat(message.get("venueId").asString()).isEqualTo(venue.toString());
+        assertThat(message.get("tableId").asString()).isEqualTo(table.toString());
+        assertThat(message.get("gameTypeId").asString()).isEqualTo("00000000-0000-4000-8000-0000000000b1");
+        assertThat(message.has("tournamentMatchId")).isFalse();
+        assertThat(message.get("reason").asString()).isEqualTo("SCORE_REACHED");
+        assertThat(message.get("winnerSide").asString()).isEqualTo("RED");
+        assertThat(message.get("sides").get(0).get("score").asInt()).isEqualTo(5);
+        assertThat(message.get("sides").get(1).get("score").asInt()).isEqualTo(3);
+    }
+
+    @Test
+    void theMessageIsMarkedPublishedOnceTheBrokerHasIt() throws Exception {
+        hub.subscribe("platform/matches/completed", 1, (topic, message) ->
+                completed.add(JSON.readTree(new String(message.getPayload(), StandardCharsets.UTF_8))));
+        publishStart(1);
+        nextAck();
+        publishEnd(2);
+        nextAck();
+        UUID eventId = UUID.fromString(nextCompleted().get("eventId").asString());
+
+        // the mark comes right after the broker answered: give it a moment, then it must be there
+        long deadline = System.currentTimeMillis() + 5_000;
+        while (stillWaiting(eventId) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+
+        assertThat(stillWaiting(eventId)).isFalse();
+    }
+
+    private boolean stillWaiting(UUID eventId) {
+        return outbox.unpublished(1000).stream().map(MatchCompleted::eventId)
+                .anyMatch(id -> id.value().equals(eventId));
+    }
+
+    @Test
+    void aMatchEndedTwiceIsPublishedOnce() throws Exception {
+        hub.subscribe("platform/matches/completed", 1, (topic, message) ->
+                completed.add(JSON.readTree(new String(message.getPayload(), StandardCharsets.UTF_8))));
+        publishStart(1);
+        nextAck();
+        publishEnd(2);
+        nextAck();
+        nextCompleted();
+
+        publishEnd(3);
+        nextAck();
+        Thread.sleep(2_500);    // more than two passes of the publisher
+
+        long ofThisMatch = completed.stream().filter(m -> m.get("matchId").asString().equals(match.toString())).count();
+        assertThat(ofThisMatch).isZero();
     }
 
     @Test

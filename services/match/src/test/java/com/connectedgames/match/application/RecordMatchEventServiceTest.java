@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.connectedgames.match.application.port.in.EventTopic;
 import com.connectedgames.match.application.port.in.RecordResult;
+import com.connectedgames.match.application.port.out.MatchCompleted;
 import com.connectedgames.match.domain.EventId;
 import com.connectedgames.match.domain.GameMode;
 import com.connectedgames.match.domain.MatchId;
@@ -36,7 +37,9 @@ class RecordMatchEventServiceTest {
 
     private final InMemoryMatchEventRepository events = new InMemoryMatchEventRepository();
     private final InMemoryMatchRepository matches = new InMemoryMatchRepository();
-    private final RecordMatchEventService service = new RecordMatchEventService(events, matches);
+    private final InMemoryMatchCompletedOutbox outbox = new InMemoryMatchCompletedOutbox();
+    private final RecordMatchEventService service =
+            new RecordMatchEventService(events, matches, outbox, UUID::randomUUID);
 
     private static EventId newId() {
         return new EventId(UUID.randomUUID());
@@ -202,5 +205,117 @@ class RecordMatchEventServiceTest {
 
         assertThat(result).isInstanceOf(RecordResult.Accepted.class);
         assertThat(matches.findById(MATCH).orElseThrow().scoreOf(RED)).isZero();
+    }
+
+    // ---- the message for stats and tournament
+
+    private static MatchEnded cancelled(int seq) {
+        return new MatchEnded(newId(), VENUE, TABLE, MATCH, seq, NOW.plusSeconds(60), EndReason.CANCELLED,
+                List.of(new SideScore(RED, 0), new SideScore(BLUE, 0)), null);
+    }
+
+    @Test
+    void aClosedMatchWritesItsMatchCompletedInTheOutbox() {
+        service.record(started(1), topic());
+        service.record(goal(2, RED), topic());
+        service.record(ended(3, 5, 3), topic());
+
+        assertThat(outbox.messages).hasSize(1);
+        MatchCompleted message = outbox.messages.get(0);
+        assertThat(message.matchId()).isEqualTo(MATCH);
+        assertThat(message.venueId()).isEqualTo(VENUE);
+        assertThat(message.tableId()).isEqualTo(TABLE);
+        assertThat(message.reason()).isEqualTo(EndReason.SCORE_REACHED);
+        assertThat(message.winnerSide()).isEqualTo(RED);
+        assertThat(message.sides()).extracting(s -> s.score()).containsExactly(5, 3);
+        assertThat(message.startedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void theMessageCarriesTenantGameTypeAndTournamentMatchOfTheStart() {
+        service.record(new MatchStarted(newId(), VENUE, TABLE, MATCH, 1, NOW, Fixtures.TENANT, Fixtures.GAME_TYPE,
+                Fixtures.TOURNAMENT_MATCH, GameMode.TEAM, 5,
+                List.of(new SideSetup(RED, "team-1", "Lightning"), new SideSetup(BLUE, null, "Blue"))), topic());
+        service.record(ended(2, 5, 1), topic());
+
+        MatchCompleted message = outbox.messages.get(0);
+        assertThat(message.tenantId()).isEqualTo(Fixtures.TENANT);
+        assertThat(message.gameTypeId()).isEqualTo(Fixtures.GAME_TYPE);
+        assertThat(message.tournamentMatchId()).isEqualTo(Fixtures.TOURNAMENT_MATCH);
+        assertThat(message.mode()).isEqualTo(GameMode.TEAM);
+        assertThat(message.sides().get(0).participantId()).isEqualTo("team-1");
+    }
+
+    @Test
+    void aMatchInProgressWritesNothing() {
+        service.record(started(1), topic());
+        service.record(goal(2, RED), topic());
+
+        assertThat(outbox.messages).isEmpty();
+    }
+
+    @Test
+    void aCancelledMatchIsAnnouncedToo() {
+        service.record(started(1), topic());
+        service.record(cancelled(2), topic());
+
+        assertThat(outbox.messages).hasSize(1);
+        assertThat(outbox.messages.get(0).reason()).isEqualTo(EndReason.CANCELLED);
+        assertThat(outbox.messages.get(0).winnerSide()).isNull();
+    }
+
+    @Test
+    void aLateEventOfAClosedMatchDoesNotWriteTheMessageAgain() {
+        service.record(started(1), topic());
+        service.record(ended(5, 5, 3), topic());
+        MatchCompleted first = outbox.messages.get(0);
+
+        service.record(goal(3, RED), topic());
+
+        assertThat(outbox.messages).containsExactly(first);
+    }
+
+    @Test
+    void aDuplicateWritesNothingNew() {
+        MatchStarted start = started(1);
+        MatchEnded end = ended(2, 5, 3);
+        service.record(start, topic());
+        service.record(end, topic());
+
+        service.record(end, topic());
+
+        assertThat(outbox.messages).hasSize(1);
+    }
+
+    @Test
+    void aRejectedEventWritesNothing() {
+        service.record(started(1), topic());
+        EventTopic other = new EventTopic(VENUE, TABLE, new MatchId(UUID.randomUUID()));
+
+        service.record(ended(2, 5, 3), other);
+
+        assertThat(outbox.messages).isEmpty();
+    }
+
+    @Test
+    void ifTheEndArrivesBeforeTheStartTheMessageIsWrittenWhenTheStartArrives() {
+        service.record(ended(2, 5, 3), topic());
+        assertThat(outbox.messages).isEmpty();
+
+        service.record(started(1), topic());
+
+        assertThat(outbox.messages).hasSize(1);
+        assertThat(outbox.messages.get(0).matchId()).isEqualTo(MATCH);
+    }
+
+    @Test
+    void theIdOfTheMessageComesFromTheIdSupplier() {
+        UUID fixed = UUID.randomUUID();
+        RecordMatchEventService withFixedId = new RecordMatchEventService(events, matches, outbox, () -> fixed);
+
+        withFixedId.record(started(1), topic());
+        withFixedId.record(ended(2, 5, 3), topic());
+
+        assertThat(outbox.messages.get(0).eventId().value()).isEqualTo(fixed);
     }
 }

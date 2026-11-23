@@ -230,7 +230,28 @@ class MatchPersistenceAdaptersTest {
         assertThat(loaded.status()).isEqualTo(MatchStatus.COMPLETED);
         assertThat(loaded.winnerSide()).isEqualTo(RED);
         assertThat(loaded.endedAt()).isEqualTo(NOW.plusSeconds(600));
+        assertThat(loaded.endReason()).isEqualTo(EndReason.SCORE_REACHED);
         assertThat(loaded.scoreOf(BLUE)).isEqualTo(3);
+    }
+
+    @Test
+    void aMatchInProgressHasNoEndReason() {
+        matches.save(matchOf(started(1)));
+        flushAndClear();
+
+        assertThat(matches.findById(MATCH).orElseThrow().endReason()).isNull();
+    }
+
+    @Test
+    void theDatabaseRefusesAClosedMatchWithoutReason() {
+        Match closed = matchOf(started(1), ended(2, 5, 3));
+        Match noReason = new Match(closed.id(), closed.venueId(), closed.tableId(), closed.tenantId(),
+                closed.gameTypeId(), closed.tournamentMatchId(), closed.status(), closed.mode(), closed.pointsToWin(),
+                closed.sides(), closed.winnerSide(), null, closed.startedAt(), closed.endedAt());
+
+        matches.save(noReason);
+
+        assertThatThrownBy(() -> em.flush()).isInstanceOf(PersistenceException.class);
     }
 
     @Test

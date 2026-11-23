@@ -5,7 +5,11 @@ import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
-
+import java.util.UUID;
+import com.connectedgames.match.application.PublishMatchCompletedService;
+import com.connectedgames.match.application.port.in.PublishMatchCompletedUseCase;
+import com.connectedgames.match.application.port.out.MatchCompletedOutbox;
+import com.connectedgames.match.application.port.out.MatchCompletedPublisher;
 import com.connectedgames.match.application.AcknowledgeEventService;
 import com.connectedgames.match.application.GetCurrentMatchService;
 import com.connectedgames.match.application.GetMatchService;
@@ -38,18 +42,21 @@ class MatchConfiguration{
     {
         return new GetMatchTimelineService(matches,events);
     }
-
+    @Bean
+    RecordMatchEventUseCase recordMatchEvent(MatchEventRepository events, MatchRepository matches,
+                                         PlatformTransactionManager transactionManager,
+                                         MatchChangeNotifier notifier,MatchCompletedOutbox outbox){
+        return new TransactionalRecordMatchEvent(new RecordMatchEventService(events, matches, outbox, UUID::randomUUID),
+            transactionManager, notifier);
+    }
+    @Bean
+    PublishMatchCompletedUseCase publishMatchCompleted(MatchCompletedOutbox outbox, MatchCompletedPublisher publisher,
+                                                   Clock clock) {
+        return new PublishMatchCompletedService(outbox, publisher, clock);
+    }
     @Bean
     Clock clock() {
         return Clock.systemUTC();
-    }
-
-    @Bean
-    RecordMatchEventUseCase recordMatchEvent(MatchEventRepository events, MatchRepository matches,
-                                             PlatformTransactionManager transactionManager,
-                                             MatchChangeNotifier notifier) {
-        return new TransactionalRecordMatchEvent(new RecordMatchEventService(events, matches),
-                transactionManager, notifier);
     }
 
     @Bean
