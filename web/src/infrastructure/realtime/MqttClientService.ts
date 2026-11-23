@@ -3,6 +3,7 @@ import mqtt, {
   type IClientPublishOptions,
   type MqttClient,
 } from 'mqtt'
+import type { MqttConnectionStatus } from '@domain/simulator'
 import type {
   MqttConnectionOptions,
   MqttMessage,
@@ -15,6 +16,7 @@ export interface MqttClientService {
   connect(options: MqttConnectionOptions): Promise<void>
 
   disconnect(): Promise<void>
+  subscribeConnectionState(handler: (status: MqttConnectionStatus) => void): () => void
 
   publish(
     topic: string,
@@ -48,7 +50,14 @@ function encodePayload(payload: MqttPayload): string {
 
 export function createMqttClientService(): MqttClientService {
   let client: MqttClient | null = null
+  let connectionAttempt: Promise<void> | null = null
+  let connectionStatus: MqttConnectionStatus = 'offline'
   const handlers = new Map<string, Set<MessageHandler>>()
+  const connectionStateHandlers = new Set<(status: MqttConnectionStatus) => void>()
+  const emitConnectionState = (status: MqttConnectionStatus) => {
+    connectionStatus = status
+    connectionStateHandlers.forEach((handler) => handler(status))
+  }
   const pendingPublishes: Array<{
     topic: string
     payload: string
@@ -66,6 +75,15 @@ export function createMqttClientService(): MqttClientService {
   return {
     async connect(options: MqttConnectionOptions) {
       if (client?.connected) return
+      if (connectionAttempt) return connectionAttempt
+      if (client?.reconnecting) return
+      if (client) {
+        await new Promise<void>((resolve, reject) => {
+          client?.end(true, {}, (error) => error ? reject(error) : resolve())
+        })
+        client = null
+      }
+      emitConnectionState('connecting')
       const clientOptions: IClientOptions = {
         clientId: options.clientId,
         username: options.username,
@@ -74,9 +92,26 @@ export function createMqttClientService(): MqttClientService {
         reconnectPeriod: options.reconnectPeriodMs ?? 2_000,
         clean: options.clean ?? true,
       }
-      client = mqtt.connect(options.url, clientOptions)
-      client.on('connect', flushPending)
-      client.on('message', (topic, rawPayload, packet) => {
+      const mqttClient = mqtt.connect(options.url, clientOptions)
+      client = mqttClient
+      mqttClient.on('connect', () => {
+        if (client !== mqttClient) return
+        emitConnectionState('connected')
+        flushPending()
+      })
+      mqttClient.on('reconnect', () => {
+        if (client === mqttClient && connectionStatus !== 'error') emitConnectionState('reconnecting')
+      })
+      mqttClient.on('offline', () => {
+        if (client === mqttClient && connectionStatus !== 'error') emitConnectionState('offline')
+      })
+      mqttClient.on('close', () => {
+        if (client === mqttClient && connectionStatus !== 'error') emitConnectionState('offline')
+      })
+      mqttClient.on('error', () => {
+        if (client === mqttClient) emitConnectionState('error')
+      })
+      mqttClient.on('message', (topic, rawPayload, packet) => {
         const message: MqttMessage = {
           id: crypto.randomUUID(),
           topic,
@@ -88,22 +123,25 @@ export function createMqttClientService(): MqttClientService {
         }
         handlers.get(topic)?.forEach((handler) => handler(message))
       })
-      await new Promise<void>((resolve, reject) => {
+      connectionAttempt = new Promise<void>((resolve, reject) => {
         const onConnect = () => {
           cleanup()
+          connectionAttempt = null
           resolve()
         }
         const onError = (error: Error) => {
           cleanup()
+          connectionAttempt = null
           reject(error)
         }
         const cleanup = () => {
-          client?.off('connect', onConnect)
-          client?.off('error', onError)
+          mqttClient.off('connect', onConnect)
+          mqttClient.off('error', onError)
         }
-        client?.once('connect', onConnect)
-        client?.once('error', onError)
+        mqttClient.once('connect', onConnect)
+        mqttClient.once('error', onError)
       })
+      return connectionAttempt
     },
     async disconnect() {
       if (!client) return
@@ -111,6 +149,7 @@ export function createMqttClientService(): MqttClientService {
         client?.end(false, {}, (error) => (error ? reject(error) : resolve()))
       })
       client = null
+      emitConnectionState('offline')
     },
     async publish(topic, payload, options) {
       validateTopic(topic)
@@ -159,5 +198,9 @@ export function createMqttClientService(): MqttClientService {
       }
     },
     isConnected: () => client?.connected ?? false,
+    subscribeConnectionState(handler) {
+      connectionStateHandlers.add(handler)
+      return () => connectionStateHandlers.delete(handler)
+    },
   }
 }

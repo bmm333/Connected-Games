@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
-import type { MatchEventEnvelope, MatchEventPublisher, SimulatorTable } from '@domain/simulator'
+import type {
+  MatchEventEnvelope,
+  MatchEventPublisher,
+  MatchStartedPayload,
+  SimulatorTable,
+} from '@domain/simulator'
 import { createMatchSimulatorUseCase } from './MatchSimulatorUseCase'
 
 const table: SimulatorTable = {
@@ -49,6 +54,7 @@ function createSimulator() {
       published.push(event)
     }),
     subscribeAck: vi.fn(),
+    subscribeConnectionState: vi.fn(() => () => undefined),
   }
   return {
     simulator: createMatchSimulatorUseCase(catalog, publisher),
@@ -82,8 +88,25 @@ describe('MatchSimulatorUseCase', () => {
       venueId: 'venue-1',
       tableId: 'table-1',
       source: 'EMULATED',
-      payload: { mode: 'INDIVIDUAL', pointsToWin: 2 },
+      payload: { gameTypeId: 'game-1', mode: 'INDIVIDUAL', pointsToWin: 2 },
     })
+    expect(started.payload).not.toHaveProperty('tournamentMatchId')
+  })
+
+  it('models tournamentMatchId as optional on MatchStarted', () => {
+    const friendly: MatchStartedPayload = {
+      gameTypeId: 'game-1',
+      mode: 'INDIVIDUAL',
+      pointsToWin: 2,
+      sides: [{ side: 'RED' }, { side: 'BLUE' }],
+    }
+    const tournament: MatchStartedPayload = {
+      ...friendly,
+      tournamentMatchId: 'tournament-match-1',
+    }
+
+    expect(friendly.tournamentMatchId).toBeUndefined()
+    expect(tournament.tournamentMatchId).toBe('tournament-match-1')
   })
 
   it('ends automatically at pointsToWin and rejects further goals', async () => {

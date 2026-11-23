@@ -13,11 +13,17 @@ export function SimulatorView() {
   const [venues, setVenues] = useState<readonly { id: string; name: string; city: string }[]>([])
   const [venueId, setVenueId] = useState('')
   const [tables, setTables] = useState<readonly SimulatorTable[]>([])
+  const [venuesLoading, setVenuesLoading] = useState(true)
+  const [tablesLoading, setTablesLoading] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [activeTables, setActiveTables] = useState<ReadonlySet<string>>(new Set())
   const [events, setEvents] = useState<readonly MatchEventEnvelope[]>([])
   const [acks, setAcks] = useState<readonly string[]>([])
-  const [mqttStatus, setMqttStatus] = useState<'offline' | 'connecting' | 'connected' | 'error'>('offline')
+  const [mqttStatus, setMqttStatus] = useState<'offline' | 'connecting' | 'connected' | 'reconnecting' | 'error'>('offline')
+  const [mqttConnectionRequested, setMqttConnectionRequested] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => simulator.subscribeConnectionState(setMqttStatus), [simulator])
 
   useEffect(() => {
     let cancelled = false
@@ -25,10 +31,15 @@ export function SimulatorView() {
       .then((loadedVenues) => {
         if (cancelled) return
         setVenues(loadedVenues)
-        setVenueId(loadedVenues[0]?.id ?? '')
+        const loadedVenueId = loadedVenues[0]?.id ?? ''
+        setVenueId(loadedVenueId)
+        if (loadedVenueId) setTablesLoading(true)
       })
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason instanceof Error ? reason.message : 'Impossibile caricare i locali')
+      })
+      .finally(() => {
+        if (!cancelled) setVenuesLoading(false)
       })
     return () => {
       cancelled = true
@@ -47,6 +58,9 @@ export function SimulatorView() {
       .catch((reason: unknown) => {
         if (!cancelled) setError(reason instanceof Error ? reason.message : 'Impossibile caricare i tavoli')
       })
+      .finally(() => {
+        if (!cancelled) setTablesLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -54,6 +68,7 @@ export function SimulatorView() {
 
   async function connectMqtt() {
     setError(null)
+    setMqttConnectionRequested(true)
     setMqttStatus('connecting')
     try {
       await simulator.connect()
@@ -71,6 +86,7 @@ export function SimulatorView() {
 
   async function publish(action: () => Promise<MatchEventEnvelope | readonly MatchEventEnvelope[]>) {
     setError(null)
+    setPublishing(true)
     try {
       const result = await action()
       const published = Array.isArray(result) ? result : [result]
@@ -84,6 +100,8 @@ export function SimulatorView() {
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Pubblicazione evento non riuscita')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -120,15 +138,24 @@ export function SimulatorView() {
             <p className="text-sm text-[var(--cg-color-label-secondary)]">Gli ack vengono ascoltati sul topic del locale selezionato.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge tone={mqttStatus === 'connected' ? 'success' : mqttStatus === 'error' ? 'warning' : 'neutral'}>{mqttStatus}</Badge>
-            <button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => void connectMqtt()} disabled={mqttStatus === 'connecting'}>
-              {mqttStatus === 'connecting' ? 'Connessione…' : 'Connetti MQTT'}
+            <Badge tone={mqttStatus === 'connected' ? 'success' : mqttStatus === 'error' || mqttStatus === 'reconnecting' ? 'warning' : 'neutral'}>{mqttStatus}</Badge>
+            <button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => void connectMqtt()} disabled={
+              mqttStatus === 'connecting' ||
+              mqttStatus === 'connected' ||
+              mqttStatus === 'reconnecting' ||
+              (mqttStatus === 'offline' && mqttConnectionRequested)
+            }>
+              {mqttStatus === 'connecting' ? 'Connessione…' : mqttStatus === 'connected' ? 'Connesso' : mqttStatus === 'reconnecting' ? 'Riconnessione…' : 'Connetti MQTT'}
             </button>
           </div>
         </div>
         <label className="block text-sm font-semibold">
           Locale
-          <select className="mt-2 block w-full rounded-lg border border-[var(--cg-color-border-subtle)] bg-[var(--cg-color-bg-grouped)] p-2" value={venueId} onChange={(event) => setVenueId(event.target.value)}>
+          <select className="mt-2 block w-full rounded-lg border border-[var(--cg-color-border-subtle)] bg-[var(--cg-color-bg-grouped)] p-2" value={venueId} onChange={(event) => {
+            setVenueId(event.target.value)
+            setTablesLoading(Boolean(event.target.value))
+          }} disabled={venuesLoading}>
+            {venuesLoading && <option value="">Caricamento locali…</option>}
             {venues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name} · {venue.city}</option>)}
           </select>
         </label>
@@ -139,7 +166,7 @@ export function SimulatorView() {
           <h2 className="text-lg font-bold">Tavoli dal catalogo</h2>
           <p className="text-sm text-[var(--cg-color-label-secondary)]">La lista proviene dall’API Catalog; il simulatore non definisce più dispositivi locali.</p>
         </div>
-        {!venueId || tables.length === 0 ? <p className="rounded-xl bg-[var(--cg-color-bg-grouped)] p-4 text-sm text-[var(--cg-color-label-secondary)]">Nessun tavolo disponibile.</p> : <div className="grid gap-3 sm:grid-cols-2">{tables.map((table) => {
+        {tablesLoading ? <p className="rounded-xl bg-[var(--cg-color-bg-grouped)] p-4 text-sm text-[var(--cg-color-label-secondary)]">Caricamento tavoli…</p> : !venueId || tables.length === 0 ? <p className="rounded-xl bg-[var(--cg-color-bg-grouped)] p-4 text-sm text-[var(--cg-color-label-secondary)]">Nessun tavolo disponibile.</p> : <div className="grid gap-3 sm:grid-cols-2">{tables.map((table) => {
           const active = activeTables.has(table.table.id)
           return <div key={table.table.id} className="rounded-xl bg-[var(--cg-color-bg-grouped)] p-4">
             <div className="flex items-start justify-between gap-3">
@@ -147,8 +174,8 @@ export function SimulatorView() {
               <Badge tone={active ? 'success' : 'neutral'}>{active ? 'match live' : 'disponibile'}</Badge>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {!active && <button type="button" className="cg-button cg-button-primary text-sm" onClick={() => startMatch(table)}>Start match</button>}
-              {active && <><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'RED')}>Goal red</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'BLUE')}>Goal blue</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => endMatch(table.table.id)}>Cancel match</button></>}
+              {!active && <button type="button" className="cg-button cg-button-primary text-sm" onClick={() => startMatch(table)} disabled={publishing}>Start match</button>}
+              {active && <><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'RED')} disabled={publishing}>Goal red</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => scoreGoal(table.table.id, 'BLUE')} disabled={publishing}>Goal blue</button><button type="button" className="cg-button cg-button-secondary text-sm" onClick={() => endMatch(table.table.id)} disabled={publishing}>Cancel match</button></>}
             </div>
           </div>
         })}</div>}
