@@ -3,7 +3,7 @@
   "title": "MatchCompleted",
   "description": "A closed match, published by the match service for stats and tournament. One per match: matchId is the key for idempotency.",
   "type": "object",
-  "required": ["eventId", "tenantId", "venueId", "tableId", "matchId", "gameTypeId", "mode", "pointsToWin", "startedAt", "endedAt", "reason", "sides"],
+  "required": ["eventId", "tenantId", "venueId", "tableId", "matchId", "gameTypeId", "mode", "pointsToWin", "startedAt", "endedAt", "reason", "sides", "points"],
   "properties": {
     "eventId": { "type": "string", "format": "uuid", "description": "Id of the outbox row: for logs and tracing, not for idempotency" },
     "tenantId": { "type": "string", "description": "Organization of the venue, as declared by the hub" },
@@ -29,6 +29,20 @@
           "participantId": { "type": "string", "description": "Squad or player: missing if the match was played without login" },
           "displayName": { "type": "string" },
           "score": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "points": {
+      "type": "array",
+      "description": "The points that counted, in order: the goals in foosball. It can be shorter than the final score if the hub did not deliver every event, and a point that arrives after the match was closed is not added: the score in sides is the one that counts",
+      "items": {
+        "type": "object",
+        "required": ["seq", "side", "occurredAt"],
+        "properties": {
+          "seq": { "type": "integer", "minimum": 1 },
+          "side": { "enum": ["RED", "BLUE"] },
+          "occurredAt": { "type": "string", "format": "date-time" }
         },
         "additionalProperties": false
       }

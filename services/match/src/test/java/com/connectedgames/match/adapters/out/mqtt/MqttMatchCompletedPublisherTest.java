@@ -51,7 +51,7 @@ class MqttMatchCompletedPublisherTest {
 
         assertThat(body.propertyNames()).containsExactlyInAnyOrder("eventId", "tenantId", "venueId", "tableId",
                 "matchId", "gameTypeId", "tournamentMatchId", "mode", "pointsToWin", "startedAt", "endedAt",
-                "reason", "winnerSide", "sides");
+                "reason", "winnerSide", "sides", "points");
         assertThat(body.get("eventId").asString()).isEqualTo(message.eventId().value().toString());
         assertThat(body.get("tenantId").asString()).isEqualTo(Fixtures.TENANT.value());
         assertThat(body.get("matchId").asString()).isEqualTo(message.matchId().value().toString());
@@ -71,17 +71,34 @@ class MqttMatchCompletedPublisherTest {
     }
 
     @Test
+    void thePointsAreListedInOrderWithSeqSideAndTime() {
+        JsonNode body = bodyOf(Fixtures.completed());
+
+        assertThat(body.get("points")).hasSize(8);
+        JsonNode first = body.get("points").get(0);
+        assertThat(first.propertyNames()).containsExactlyInAnyOrder("seq", "side", "occurredAt");
+        assertThat(first.get("seq").asInt()).isEqualTo(2);
+        assertThat(first.get("side").asString()).isEqualTo("RED");
+        assertThat(first.get("occurredAt").asString()).isEqualTo("2026-11-16T20:00:30Z");
+        assertThat(body.get("points").get(2).get("side").asString()).isEqualTo("BLUE");
+        assertThat(body.get("points").get(7).get("seq").asInt()).isEqualTo(9);
+    }
+
+    @Test
     void whatIsMissingIsLeftOutBecauseTheSchemaDoesNotAcceptNull() {
         MatchCompleted draw = new MatchCompleted(new EventId(UUID.randomUUID()), Fixtures.TENANT,
                 Fixtures.completed().venueId(), Fixtures.completed().tableId(), new MatchId(UUID.randomUUID()),
                 Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, Instant.parse("2026-11-16T20:00:00Z"),
                 Instant.parse("2026-11-16T20:10:00Z"), EndReason.TIME_EXPIRED, null,
-                List.of(new MatchSide(Side.RED, null, null, 2), new MatchSide(Side.BLUE, null, "Blue", 2)));
+                List.of(new MatchSide(Side.RED, null, null, 2), new MatchSide(Side.BLUE, null, "Blue", 2)), List.of());
 
         JsonNode body = bodyOf(draw);
 
         assertThat(body.has("tournamentMatchId")).isFalse();
         assertThat(body.has("winnerSide")).isFalse();
+        // points is required by the schema: with no goals it is an empty list, not missing
+        assertThat(body.has("points")).isTrue();
+        assertThat(body.get("points")).isEmpty();
         assertThat(body.get("sides").get(0).has("participantId")).isFalse();
         assertThat(body.get("sides").get(0).has("displayName")).isFalse();
         assertThat(body.get("sides").get(1).get("displayName").asString()).isEqualTo("Blue");

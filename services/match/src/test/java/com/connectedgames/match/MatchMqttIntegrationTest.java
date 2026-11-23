@@ -170,6 +170,10 @@ class MatchMqttIntegrationTest {
         assertThat(message.get("winnerSide").asString()).isEqualTo("RED");
         assertThat(message.get("sides").get(0).get("score").asInt()).isEqualTo(5);
         assertThat(message.get("sides").get(1).get("score").asInt()).isEqualTo(3);
+        assertThat(message.get("points")).hasSize(1);
+        assertThat(message.get("points").get(0).get("seq").asInt()).isEqualTo(2);
+        assertThat(message.get("points").get(0).get("side").asString()).isEqualTo("RED");
+        assertThat(message.get("points").get(0).get("occurredAt").asString()).isEqualTo("2026-11-16T20:00:00Z");
     }
 
     @Test
