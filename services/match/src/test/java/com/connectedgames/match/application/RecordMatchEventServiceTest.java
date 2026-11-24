@@ -27,6 +27,7 @@ import com.connectedgames.match.domain.match.MatchStatus;
 import static com.connectedgames.match.domain.Side.BLUE;
 import static com.connectedgames.match.domain.Side.RED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 class RecordMatchEventServiceTest {
 
@@ -317,5 +318,51 @@ class RecordMatchEventServiceTest {
         withFixedId.record(ended(2, 5, 3), topic());
 
         assertThat(outbox.messages.get(0).eventId().value()).isEqualTo(fixed);
+    }
+
+    // ---- the points inside the message
+
+    @Test
+    void theMessageCarriesThePointsOfTheMatchInOrder() {
+        service.record(started(1), topic());
+        service.record(goal(2, RED), topic());
+        service.record(goal(3, BLUE), topic());
+        service.record(goal(4, RED), topic());
+        service.record(ended(5, 2, 1), topic());
+
+        assertThat(outbox.messages.get(0).points()).extracting(p -> p.seq(), p -> p.side())
+                .containsExactly(tuple(2, RED), tuple(3, BLUE), tuple(4, RED));
+    }
+
+    @Test
+    void theGoalsInTheMessageAreInOrderEvenIfTheyArrivedOutOfOrder() {
+        service.record(started(1), topic());
+        service.record(goal(4, RED), topic());
+        service.record(goal(2, RED), topic());
+        service.record(goal(3, BLUE), topic());
+        service.record(ended(5, 2, 1), topic());
+
+        assertThat(outbox.messages.get(0).points()).extracting(p -> p.seq()).containsExactly(2, 3, 4);
+    }
+
+    @Test
+    void aMatchCancelledBeforeAnyGoalHasNoPoints() {
+        service.record(started(1), topic());
+        service.record(cancelled(2), topic());
+
+        assertThat(outbox.messages.get(0).points()).isEmpty();
+    }
+
+    @Test
+    void aGoalThatArrivesAfterTheMessageWasWrittenDoesNotChangeIt() {
+        service.record(started(1), topic());
+        service.record(goal(2, RED), topic());
+        service.record(ended(5, 1, 0), topic());
+        MatchCompleted first = outbox.messages.get(0);
+
+        service.record(goal(3, BLUE), topic());
+
+        assertThat(outbox.messages).containsExactly(first);
+        assertThat(outbox.messages.get(0).points()).extracting(p -> p.seq()).containsExactly(2);
     }
 }

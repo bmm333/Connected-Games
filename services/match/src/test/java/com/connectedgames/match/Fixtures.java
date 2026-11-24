@@ -1,6 +1,7 @@
 package com.connectedgames.match;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import com.connectedgames.match.domain.TableId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.match.MatchSide;
+import com.connectedgames.match.domain.match.ScoredPoint;
 
 import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.TenantId;
@@ -32,7 +34,18 @@ public final class Fixtures {
                 new TableId(UUID.randomUUID()), match, GAME_TYPE, TOURNAMENT_MATCH, GameMode.TEAM, 5,
                 Instant.parse("2026-11-16T20:00:00Z"), Instant.parse("2026-11-16T20:10:00Z"),
                 EndReason.SCORE_REACHED, Side.RED,
-                List.of(new MatchSide(Side.RED, "team-1", "Lightning", 5), new MatchSide(Side.BLUE, null, "Blue", 3)));
+                List.of(new MatchSide(Side.RED, "team-1", "Lightning", 5), new MatchSide(Side.BLUE, null, "Blue", 3)),
+                points("RRBRBRBR"));
+    }
+
+    /** The points of a match, in order: R is a goal of RED, B one of BLUE. seq starts at 2, after the start. */
+    public static List<ScoredPoint> points(String sequence) {
+        List<ScoredPoint> points = new ArrayList<>();
+        for (int i = 0; i < sequence.length(); i++) {
+            points.add(new ScoredPoint(i + 2, sequence.charAt(i) == 'R' ? Side.RED : Side.BLUE,
+                    Instant.parse("2026-11-16T20:00:00Z").plusSeconds(30L * (i + 1))));
+        }
+        return points;
     }
 
     public static MatchCompleted completed() {

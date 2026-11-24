@@ -12,6 +12,7 @@ import com.connectedgames.match.domain.TournamentMatchId;
 import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.match.MatchSide;
+import com.connectedgames.match.domain.match.ScoredPoint;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
@@ -26,9 +27,11 @@ final class OutboxPayloads {
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     record SidePayload(Side side, String participantId, String displayName, int score) {}
+    record PointPayload(int seq, Side side, Instant occurredAt) {}
     record CompletedPayload(UUID eventId, String tenantId, UUID venueId, UUID tableId, UUID matchId, UUID gameTypeId,
                             UUID tournamentMatchId, GameMode mode, int pointsToWin, Instant startedAt,
-                            Instant endedAt, EndReason reason, Side winnerSide, List<SidePayload> sides) {}
+                            Instant endedAt, EndReason reason, Side winnerSide, List<SidePayload> sides,
+                            List<PointPayload> points) {}
 
     private OutboxPayloads() {
     }
@@ -38,7 +41,8 @@ final class OutboxPayloads {
                 m.venueId().value(), m.tableId().value(), m.matchId().value(), m.gameTypeId().value(),
                 m.tournamentMatchId() == null ? null : m.tournamentMatchId().value(), m.mode(), m.pointsToWin(),
                 m.startedAt(), m.endedAt(), m.reason(), m.winnerSide(),
-                m.sides().stream().map(s -> new SidePayload(s.side(), s.participantId(), s.displayName(), s.score())).toList()));
+                m.sides().stream().map(s -> new SidePayload(s.side(), s.participantId(), s.displayName(), s.score())).toList(),
+                m.points().stream().map(x -> new PointPayload(x.seq(), x.side(), x.occurredAt())).toList()));
     }
 
     static MatchCompleted read(String json) {
@@ -47,6 +51,7 @@ final class OutboxPayloads {
                 new TableId(p.tableId()), new MatchId(p.matchId()), new GameTypeId(p.gameTypeId()),
                 p.tournamentMatchId() == null ? null : new TournamentMatchId(p.tournamentMatchId()), p.mode(),
                 p.pointsToWin(), p.startedAt(), p.endedAt(), p.reason(), p.winnerSide(),
-                p.sides().stream().map(s -> new MatchSide(s.side(), s.participantId(), s.displayName(), s.score())).toList());
+                p.sides().stream().map(s -> new MatchSide(s.side(), s.participantId(), s.displayName(), s.score())).toList(),
+                p.points().stream().map(x -> new ScoredPoint(x.seq(), x.side(), x.occurredAt())).toList());
     }
 }

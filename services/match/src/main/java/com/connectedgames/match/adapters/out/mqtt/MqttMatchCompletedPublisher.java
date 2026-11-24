@@ -28,10 +28,13 @@ public class MqttMatchCompletedPublisher implements MatchCompletedPublisher {
     private record SideMessage(Side side, String participantId, String displayName, int score) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    private record PointMessage(int seq, Side side, Instant occurredAt) {}
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private record CompletedMessage(String eventId, String tenantId, String venueId, String tableId, String matchId,
                                     String gameTypeId, String tournamentMatchId, GameMode mode, int pointsToWin,
                                     Instant startedAt, Instant endedAt, EndReason reason, Side winnerSide,
-                                    List<SideMessage> sides) {}
+                                    List<SideMessage> sides, List<PointMessage> points) {}
 
     private final MessageChannel channel;
 
@@ -46,7 +49,8 @@ public class MqttMatchCompletedPublisher implements MatchCompletedPublisher {
                 m.gameTypeId().value().toString(),
                 m.tournamentMatchId() == null ? null : m.tournamentMatchId().value().toString(),
                 m.mode(), m.pointsToWin(), m.startedAt(), m.endedAt(), m.reason(), m.winnerSide(),
-                m.sides().stream().map(s -> new SideMessage(s.side(), s.participantId(), s.displayName(), s.score())).toList());
+                m.sides().stream().map(s -> new SideMessage(s.side(), s.participantId(), s.displayName(), s.score())).toList(),
+                m.points().stream().map(x -> new PointMessage(x.seq(), x.side(), x.occurredAt())).toList());
         // The handler is not async: when send returns without an exception the broker has answered the QoS 1 publish.
         boolean sent = channel.send(MessageBuilder.withPayload(JSON.writeValueAsString(body))
                 .setHeader(MqttHeaders.TOPIC, TOPIC)

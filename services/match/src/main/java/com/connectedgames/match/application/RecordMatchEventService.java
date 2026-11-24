@@ -13,6 +13,7 @@ import com.connectedgames.match.application.port.out.MatchEventRepository;
 import com.connectedgames.match.application.port.out.MatchRepository;
 import com.connectedgames.match.domain.event.MatchEvent;
 import com.connectedgames.match.domain.match.Match;
+import java.util.List;
 
 public final class RecordMatchEventService implements RecordMatchEventUseCase {
 
@@ -53,7 +54,8 @@ public final class RecordMatchEventService implements RecordMatchEventUseCase {
         }
         //save event, rebuild match from all its events.
         events.save(event);
-        Match.replay(events.findByMatchId(event.venueId(), event.matchId())).ifPresent(this::saveAndAnnounce);
+        List<MatchEvent> all = events.findByMatchId(event.venueId(), event.matchId());
+        Match.replay(all).ifPresent(match -> saveAndAnnounce(match, all));
         return new RecordResult.Accepted(event.id());
     }
 
@@ -61,11 +63,11 @@ public final class RecordMatchEventService implements RecordMatchEventUseCase {
      * A closed match gets its MatchCompleted in the same transaction. Every event of a closed match passes here,
      * and the outbox keeps only the first message of each match, so a late event does not send it twice.
      */
-    private void saveAndAnnounce(Match match)
+    private void saveAndAnnounce(Match match, List<MatchEvent> all)
     {
         matches.save(match);
         if(match.isClosed()){
-            outbox.add(MatchCompleted.of(new EventId(ids.get()),match));
+            outbox.add(MatchCompleted.of(new EventId(ids.get()), match, match.pointsFrom(all)));
         }
     }
     private static boolean belongsToTheSamePlace(Match match,MatchEvent event)

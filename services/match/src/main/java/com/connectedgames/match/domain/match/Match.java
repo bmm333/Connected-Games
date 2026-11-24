@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.ArrayList;
 import com.connectedgames.match.domain.GameMode;
 import com.connectedgames.match.domain.GameTypeId;
 import com.connectedgames.match.domain.MatchId;
@@ -41,6 +41,30 @@ public record Match(MatchId id, VenueId venueId, TableId tableId, TenantId tenan
         for(MatchEvent event: ordered) match=match.apply(event);
         return Optional.of(match);
     }
+
+    /**
+     *  Points that counted, in order of seq: goals up to first end, as replay counts them.
+     *  A goal with a lower seq than the end countes even if it arrived later. one after the end dose not.
+     *  Events of another venue are ignored like replay does.
+     * */
+    public List<ScoredPoint> pointsFrom(Collection<MatchEvent> events){
+        List<ScoredPoint> points = new ArrayList<>();
+        for(MatchEvent event: events.stream().sorted(Comparator.comparingInt(MatchEvent::seq)).toList()){
+            if(!venueId.equals(event.venueId()) || !tableId.equals(event.tableId())){
+                continue;
+            }
+            switch(event){
+                case GoalScored e -> points.add(new ScoredPoint(e.seq(),e.side(),e.occurredAt()));
+                case MatchEnded _ ->{
+                    return points;
+                }
+                case MatchStarted _ -> {}
+            }
+        }
+        return points;
+    }
+
+
 
     static Match start(MatchStarted event) {
         List<MatchSide> sides=event.sides().stream()

@@ -14,6 +14,8 @@ import com.connectedgames.match.domain.event.*;
 import static com.connectedgames.match.domain.Side.BLUE;
 import static com.connectedgames.match.domain.Side.RED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 class MatchTest {
 
@@ -224,5 +226,75 @@ class MatchTest {
         Match match = Match.replay(List.of(started(1), foreign)).orElseThrow();
 
         assertThat(match.scoreOf(RED)).isZero();
+    }
+
+    // ---- the points that counted
+
+    @Test
+    void thePointsAreTheGoalsInOrderOfSeqWhateverTheOrderOfArrival() {
+        List<MatchEvent> events = List.of(goal(4, RED), ended(5, 2, 1), started(1), goal(3, BLUE), goal(2, RED));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).extracting(ScoredPoint::seq, ScoredPoint::side)
+                .containsExactly(tuple(2, RED), tuple(3, BLUE), tuple(4, RED));
+    }
+
+    @Test
+    void aPointKeepsTheTimeOfItsGoal() {
+        Instant later = NOW.plusSeconds(90);
+        List<MatchEvent> events = List.of(started(1), new GoalScored(newId(), VENUE, TABLE, MATCH, 2, later, RED),
+                ended(3, 1, 0));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).containsExactly(new ScoredPoint(2, RED, later));
+    }
+
+    @Test
+    void aGoalAfterTheEndIsNotAPoint() {
+        List<MatchEvent> events = List.of(started(1), goal(2, RED), ended(3, 1, 0), goal(4, BLUE));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).extracting(ScoredPoint::seq).containsExactly(2);
+    }
+
+    @Test
+    void aLateGoalWithALowerSeqThanTheEndIsAPoint() {
+        List<MatchEvent> events = List.of(started(1), ended(5, 2, 1), goal(3, BLUE), goal(2, RED));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).extracting(ScoredPoint::seq).containsExactly(2, 3);
+    }
+
+    @Test
+    void pointsStopAtTheFirstEndNotAtTheLastOne() {
+        List<MatchEvent> events = List.of(started(1), goal(2, RED), ended(3, 1, 0), goal(4, BLUE), ended(5, 1, 1));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).extracting(ScoredPoint::seq).containsExactly(2);
+    }
+
+    @Test
+    void aMatchWithoutGoalsHasNoPoints() {
+        List<MatchEvent> events = List.of(started(1), cancelled(2));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).isEmpty();
+    }
+
+    @Test
+    void goalsOfAnotherTableAreNotPoints() {
+        TableId other = new TableId(UUID.randomUUID());
+        GoalScored foreign = new GoalScored(newId(), VENUE, other, MATCH, 2, NOW, RED);
+        List<MatchEvent> events = List.of(started(1), foreign, goal(3, BLUE), ended(4, 0, 1));
+        Match match = Match.replay(events).orElseThrow();
+
+        assertThat(match.pointsFrom(events)).extracting(ScoredPoint::seq).containsExactly(3);
+    }
+
+    @Test
+    void aPointNeedsASeqFromOneASideAndATime() {
+        assertThatThrownBy(() -> new ScoredPoint(0, RED, NOW)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ScoredPoint(1, null, NOW)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new ScoredPoint(1, RED, null)).isInstanceOf(NullPointerException.class);
     }
 }

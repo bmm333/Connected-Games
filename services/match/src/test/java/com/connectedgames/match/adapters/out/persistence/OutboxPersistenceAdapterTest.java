@@ -57,12 +57,24 @@ class OutboxPersistenceAdapterTest {
     }
 
     @Test
+    void thePointsComeBackInTheSameOrderWithTheirTime() {
+        MatchCompleted message = Fixtures.completed();
+        outbox.add(message);
+        flushAndClear();
+
+        MatchCompleted loaded = outbox.unpublished(10).get(0);
+
+        assertThat(loaded.points()).hasSize(8).isEqualTo(Fixtures.points("RRBRBRBR"));
+        assertThat(loaded.points().get(0).occurredAt()).isEqualTo(Instant.parse("2026-11-16T20:00:30Z"));
+    }
+
+    @Test
     void savesAndLoadsAFriendlyDrawWithoutTheOptionalFields() {
         MatchCompleted draw = new MatchCompleted(new EventId(UUID.randomUUID()), Fixtures.TENANT,
                 Fixtures.completed().venueId(), Fixtures.completed().tableId(), new MatchId(UUID.randomUUID()),
                 Fixtures.GAME_TYPE, null, GameMode.INDIVIDUAL, 5, Instant.parse("2026-11-16T20:00:00Z"),
                 Instant.parse("2026-11-16T20:10:00Z"), EndReason.TIME_EXPIRED, null,
-                List.of(new MatchSide(Side.RED, null, null, 2), new MatchSide(Side.BLUE, null, null, 2)));
+                List.of(new MatchSide(Side.RED, null, null, 2), new MatchSide(Side.BLUE, null, null, 2)), List.of());
         outbox.add(draw);
         flushAndClear();
 

@@ -16,10 +16,11 @@ import com.connectedgames.match.domain.VenueId;
 import com.connectedgames.match.domain.event.EndReason;
 import com.connectedgames.match.domain.match.Match;
 import com.connectedgames.match.domain.match.MatchSide;
+import com.connectedgames.match.domain.match.ScoredPoint;
 
 public record MatchCompleted(EventId eventId,TenantId tenantId,VenueId venueId,TableId tableId,MatchId matchId,
 GameTypeId gameTypeId,TournamentMatchId tournamentMatchId,GameMode mode,int pointsToWin,Instant startedAt,Instant endedAt,
-EndReason reason,Side winnerSide, List<MatchSide> sides)
+EndReason reason,Side winnerSide, List<MatchSide> sides,List<ScoredPoint> points)
 {
     public MatchCompleted {
         Objects.requireNonNull(eventId, "eventId");
@@ -33,14 +34,15 @@ EndReason reason,Side winnerSide, List<MatchSide> sides)
         Objects.requireNonNull(endedAt, "endedAt");
         Objects.requireNonNull(reason, "reason");
         sides = List.copyOf(sides);
+        points= List.copyOf(points);
     }
 
-    public static MatchCompleted of(EventId eventId, Match match) {
+    public static MatchCompleted of(EventId eventId, Match match,List<ScoredPoint> points) {
         if (!match.isClosed()) {
             throw new IllegalArgumentException("The match " + match.id().value() + " is still in progress");
         }
         return new MatchCompleted(eventId, match.tenantId(), match.venueId(), match.tableId(), match.id(),
                 match.gameTypeId(), match.tournamentMatchId(), match.mode(), match.pointsToWin(),
-                match.startedAt(), match.endedAt(), match.endReason(), match.winnerSide(), match.sides());
+                match.startedAt(), match.endedAt(), match.endReason(), match.winnerSide(), match.sides(),points);
     }
 }
