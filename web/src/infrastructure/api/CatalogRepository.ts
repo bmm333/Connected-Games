@@ -2,6 +2,8 @@ import createClient from 'openapi-fetch'
 import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
 import type { TableLookup } from '@domain/catalog/TableLookup'
 import type { paths } from './generated/catalog'
+import { createRetryingFetch } from '@shared/communication/retryingFetch'
+import { communicationConfig, communicationRoutes, apiUrl } from '@shared/communication/config'
 
 type TableLookupDto = paths['/tables/by-code/{code}']['get']['responses'][200]['content']['application/json']
 
@@ -14,9 +16,10 @@ function mapTableLookup(dto: TableLookupDto): TableLookup {
 }
 
 export function createCatalogRepository(
-  baseUrl = import.meta.env.VITE_API_URL ?? '/api/catalog',
+  baseUrl = apiUrl(communicationConfig.apiBaseUrl, communicationRoutes.catalog),
+  fetcher: typeof fetch = createRetryingFetch(),
 ): SimulatorCatalogRepository {
-  const client = createClient<paths>({ baseUrl })
+  const client = createClient<paths>({ baseUrl, fetch: fetcher })
 
   return {
     async resolveTableByCode(code) {

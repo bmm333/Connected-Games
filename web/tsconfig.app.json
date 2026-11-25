@@ -84,6 +84,8 @@
       /* ── Shared ── */
       "@shared/api":             ["./src/shared/api"],
       "@shared/api/*":           ["./src/shared/api/*"],
+      "@shared/communication":   ["./src/shared/communication"],
+      "@shared/communication/*": ["./src/shared/communication/*"],
       "@shared/lib":             ["./src/shared/lib"],
       "@shared/lib/*":           ["./src/shared/lib/*"],
       "@shared/offline":         ["./src/shared/offline"],

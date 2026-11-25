@@ -35,6 +35,7 @@ export default defineConfig({
 
       // Shared cross-cutting concerns
       '@shared/api':      r('shared', 'api'),
+      '@shared/communication': r('shared', 'communication'),
       '@shared/lib':      r('shared', 'lib'),
       '@shared/offline':  r('shared', 'offline'),
       '@shared/realtime': r('shared', 'realtime'),

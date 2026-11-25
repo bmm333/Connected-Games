@@ -29,6 +29,7 @@ export const SHARED_ALIASES = {
   '@ui':             r('ui'),
   '@ui/':            r('ui') + path.sep,
   '@shared/api':      r('shared', 'api'),
+  '@shared/communication': r('shared', 'communication'),
   '@shared/lib':      r('shared', 'lib'),
   '@shared/offline':  r('shared', 'offline'),
   '@shared/realtime': r('shared', 'realtime'),

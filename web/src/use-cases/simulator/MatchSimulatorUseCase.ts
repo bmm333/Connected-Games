@@ -8,6 +8,7 @@ import type {
   SimulatorTable,
 } from '@domain/simulator'
 import { createUuidV7 } from '@domain/simulator'
+import { communicationRoutes } from '@shared/communication/config'
 
 interface MatchState {
   readonly table: SimulatorTable
@@ -27,9 +28,6 @@ export interface MatchSimulatorUseCase {
   subscribeAcks(venueId: string, onAck: (payload: unknown) => void): Promise<() => Promise<void>>
   subscribeConnectionState(onState: (status: MqttConnectionStatus) => void): () => void
 }
-
-const topicFor = (table: SimulatorTable, matchId: string) =>
-  `venues/${encodeURIComponent(table.venue.id)}/tables/${encodeURIComponent(table.table.id)}/matches/${encodeURIComponent(matchId)}/events`
 
 export function createMatchSimulatorUseCase(
   catalog: SimulatorCatalogRepository,
@@ -55,7 +53,10 @@ export function createMatchSimulatorUseCase(
   }
 
   async function publish(state: MatchState, event: MatchEventEnvelope) {
-    await publisher.publish(topicFor(state.table, state.matchId), event)
+    await publisher.publish(
+      communicationRoutes.mqttMatchEvents(state.table.venue.id, state.table.table.id, state.matchId),
+      event,
+    )
     return event
   }
 

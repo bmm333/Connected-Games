@@ -54,6 +54,7 @@ function createSimulator() {
       published.push(event)
     }),
     subscribeAck: vi.fn(),
+    subscribeMatchCompleted: vi.fn(),
     subscribeConnectionState: vi.fn(() => () => undefined),
   }
   return {

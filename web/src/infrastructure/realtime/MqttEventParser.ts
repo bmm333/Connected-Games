@@ -1,4 +1,4 @@
-import type { MatchCompleted } from '@domain/simulator'
+import type { Match, MatchCompleted, MatchStarted } from '@domain/simulator'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -75,6 +75,83 @@ export function parseEventsAcknowledged(payload: unknown): {
   }
 }
 
+function parseSides(
+  value: unknown,
+  field: string,
+  requireScore: boolean,
+): readonly Record<string, unknown>[] {
+  if (!Array.isArray(value) || value.length < 2 ||
+    !value.every((side) => isRecord(side) &&
+      (side.side === 'RED' || side.side === 'BLUE') &&
+      (!requireScore || (Number.isInteger(side.score) && (side.score as number) >= 0)) &&
+      (side.participantId === undefined || isString(side.participantId)) &&
+      (side.displayName === undefined || isString(side.displayName)))) {
+    throw new Error(`Invalid match payload: invalid ${field}`)
+  }
+  return value as readonly Record<string, unknown>[]
+}
+
+export function parseMatch(payload: unknown): Match {
+  const value = parseJsonObject(payload)
+  for (const field of ['id', 'tableId', 'venueId', 'gameTypeId'] as const) {
+    if (!isUuid(value[field])) throw new Error(`Invalid Match payload: ${field} must be a UUID`)
+  }
+  if (value.tournamentMatchId !== undefined && !isUuid(value.tournamentMatchId)) {
+    throw new Error('Invalid Match payload: tournamentMatchId must be a UUID')
+  }
+  if (!['WAITING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].includes(String(value.status))) {
+    throw new Error('Invalid Match payload: invalid status')
+  }
+  if (value.mode !== 'INDIVIDUAL' && value.mode !== 'TEAM') {
+    throw new Error('Invalid Match payload: invalid mode')
+  }
+  if (!Number.isInteger(value.pointsToWin) || (value.pointsToWin as number) < 1) {
+    throw new Error('Invalid Match payload: invalid pointsToWin')
+  }
+  if (!isDateTime(value.startedAt) ||
+    (value.endedAt !== undefined && !isDateTime(value.endedAt))) {
+    throw new Error('Invalid Match payload: invalid timestamps')
+  }
+  if (value.winnerSide !== undefined && value.winnerSide !== 'RED' && value.winnerSide !== 'BLUE') {
+    throw new Error('Invalid Match payload: invalid winnerSide')
+  }
+  const sides = parseSides(value.sides, 'sides', true)
+  return { ...value, sides } as unknown as Match
+}
+
+export function parseMatchStarted(payload: unknown): MatchStarted {
+  const envelope = parseJsonObject(payload)
+  if (envelope.type !== 'MatchStarted') {
+    throw new Error('Invalid MatchStarted payload: expected MatchStarted event')
+  }
+  for (const field of ['eventId', 'venueId', 'tableId', 'matchId'] as const) {
+    if (!isUuid(envelope[field])) {
+      throw new Error(`Invalid MatchStarted payload: ${field} must be a UUID`)
+    }
+  }
+  if (!isString(envelope.tenantId) ||
+    !Number.isInteger(envelope.seq) || (envelope.seq as number) < 1 ||
+    !isDateTime(envelope.occurredAt) ||
+    !['CAMERA', 'IR', 'BUTTON', 'EMULATED'].includes(String(envelope.source))) {
+    throw new Error('Invalid MatchStarted payload: invalid event envelope')
+  }
+  const value = parseJsonObject(envelope.payload)
+  if (!isUuid(value.gameTypeId)) {
+    throw new Error('Invalid MatchStarted payload: gameTypeId must be a UUID')
+  }
+  if (value.tournamentMatchId !== undefined && !isUuid(value.tournamentMatchId)) {
+    throw new Error('Invalid MatchStarted payload: tournamentMatchId must be a UUID')
+  }
+  if (value.mode !== 'INDIVIDUAL' && value.mode !== 'TEAM') {
+    throw new Error('Invalid MatchStarted payload: invalid mode')
+  }
+  if (!Number.isInteger(value.pointsToWin) || (value.pointsToWin as number) < 1) {
+    throw new Error('Invalid MatchStarted payload: invalid pointsToWin')
+  }
+  const sides = parseSides(value.sides, 'sides', false)
+  return { ...value, sides } as unknown as MatchStarted
+}
+
 export function parseMatchCompleted(payload: unknown): MatchCompleted {
   const value = parseJsonObject(payload)
   const requiredUuidFields = ['eventId', 'venueId', 'tableId', 'matchId', 'gameTypeId'] as const
@@ -100,14 +177,14 @@ export function parseMatchCompleted(payload: unknown): MatchCompleted {
   if (value.winnerSide !== undefined && value.winnerSide !== 'RED' && value.winnerSide !== 'BLUE') {
     throw new Error('Invalid MatchCompleted payload: invalid winnerSide')
   }
-  if (!Array.isArray(value.sides) || value.sides.length < 2 ||
-    !value.sides.every((side) => isRecord(side) &&
-      (side.side === 'RED' || side.side === 'BLUE') &&
-      Number.isInteger(side.score) && (side.score as number) >= 0 &&
-      (side.participantId === undefined || isString(side.participantId)) &&
-      (side.displayName === undefined || isString(side.displayName)))) {
-    throw new Error('Invalid MatchCompleted payload: invalid sides')
+  const sides = parseSides(value.sides, 'sides', true)
+  if (!Array.isArray(value.points) ||
+    !value.points.every((point) => isRecord(point) &&
+      Number.isInteger(point.seq) && (point.seq as number) >= 1 &&
+      (point.side === 'RED' || point.side === 'BLUE') &&
+      isDateTime(point.occurredAt))) {
+    throw new Error('Invalid MatchCompleted payload: invalid points')
   }
 
-  return value as unknown as MatchCompleted
+  return { ...value, sides } as unknown as MatchCompleted
 }

@@ -22,11 +22,8 @@ import { createLogoutUseCase } from '@use-cases/console-auth/LogoutUseCase'
 import { createGetUserPermissionsUseCase } from '@use-cases/console-auth/GetUserPermissionsUseCase'
 import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/ValidateRouteAccessUseCase'
 import type { UserSession } from '@domain/console/auth/UserSession'
-import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
-import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
-import { createMqttMatchEventPublisher } from '@infrastructure/realtime/MqttMatchEventPublisher'
 import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
-import { createUuidV7 } from '@domain/simulator'
+import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -59,7 +56,7 @@ export function createConsoleDependencies(): ConsoleDependencies {
     createHttpConsoleAuthApiClient(),
     consoleSessionStore,
   )
-  const catalogRepository = createCatalogRepository()
+  const communication = createCommunicationServices()
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),
@@ -73,11 +70,8 @@ export function createConsoleDependencies(): ConsoleDependencies {
     devices: createGetDevicesStatusUseCase(deviceRepository),
     executeDeviceCommand: createExecuteDeviceCommandUseCase(deviceRepository),
     simulator: createMatchSimulatorUseCase(
-      catalogRepository,
-      createMqttMatchEventPublisher(createMqttClientService(), {
-        url: import.meta.env.VITE_MQTT_URL ?? 'ws://localhost:9001',
-        clientId: `connected-games-simulator-${createUuidV7()}`,
-      }),
+      communication.catalog,
+      communication.matchEvents,
     ),
     consoleAuth: {
       sessionStore: consoleSessionStore,

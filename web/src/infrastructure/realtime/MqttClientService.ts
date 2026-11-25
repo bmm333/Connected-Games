@@ -34,6 +34,7 @@ export interface MqttClientService {
 
 type MessageHandler = (message: MqttMessage) => void
 const MAX_PENDING_PUBLISHES = 1_000
+const CONNECTION_TIMEOUT_MS = 10_000
 
 function validateTopic(topic: string): void {
   if (!topic || topic.length > 256) {
@@ -74,6 +75,9 @@ export function createMqttClientService(): MqttClientService {
 
   return {
     async connect(options: MqttConnectionOptions) {
+      if (!options.url) {
+        throw new Error('VITE_MQTT_URL is required for MQTT connections')
+      }
       if (client?.connected) return
       if (connectionAttempt) return connectionAttempt
       if (client?.reconnecting) return
@@ -90,6 +94,7 @@ export function createMqttClientService(): MqttClientService {
         password: options.password,
         keepalive: options.keepAliveSeconds ?? 30,
         reconnectPeriod: options.reconnectPeriodMs ?? 2_000,
+        connectTimeout: CONNECTION_TIMEOUT_MS,
         clean: options.clean ?? true,
       }
       const mqttClient = mqtt.connect(options.url, clientOptions)
@@ -124,6 +129,13 @@ export function createMqttClientService(): MqttClientService {
         handlers.get(topic)?.forEach((handler) => handler(message))
       })
       connectionAttempt = new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          cleanup()
+          connectionAttempt = null
+          emitConnectionState('error')
+          mqttClient.end(true)
+          reject(new Error('MQTT connection timed out'))
+        }, CONNECTION_TIMEOUT_MS)
         const onConnect = () => {
           cleanup()
           connectionAttempt = null
@@ -135,6 +147,7 @@ export function createMqttClientService(): MqttClientService {
           reject(error)
         }
         const cleanup = () => {
+          clearTimeout(timeout)
           mqttClient.off('connect', onConnect)
           mqttClient.off('error', onError)
         }

@@ -13,7 +13,7 @@ export function App() {
       persistOptions={{ persister: dependencies.queryPersister }}
     >
       <ThemeProvider>
-        <KioskRouter />
+        <KioskRouter matches={dependencies.matches} />
       </ThemeProvider>
     </PersistQueryClientProvider>
   )

@@ -1,6 +1,6 @@
 import { createPlatformKeyValueStore } from '@infrastructure/storage/PlatformKeyValueStore'
-import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
 import { createPlatformQueryPersister } from '@infrastructure/storage/PlatformQueryPersister'
+import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
 import {
   createKeyValueStoreUseCases,
   type KeyValueStoreUseCases,
@@ -21,7 +21,7 @@ export interface PlayerDependencies {
 }
 
 export function createPlayerDependencies(): PlayerDependencies {
-  const catalogRepository = createCatalogRepository()
+  const communication = createCommunicationServices()
   const platformStore = createPlatformKeyValueStore()
 
   return {
@@ -32,7 +32,7 @@ export function createPlayerDependencies(): PlayerDependencies {
     ),
     auth: createAuthDependencies(),
     catalog: {
-      resolveTableByCode: createResolveTableByCode(catalogRepository),
+      resolveTableByCode: createResolveTableByCode(communication.catalog),
     },
   }
 }
