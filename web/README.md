@@ -41,6 +41,45 @@ VITE_SSE_URL=https://api.example.test
 VITE_MQTT_URL=wss://broker.example.test/mqtt
 ```
 
+### Servizi locali del repository
+
+Per lo sviluppo locale, il Vite dev server può inoltrare Catalog e Match ai
+servizi Spring direttamente, evitando il gateway:
+
+```dotenv
+VITE_USE_MOCKS=false
+VITE_API_BASE_URL=
+VITE_SSE_URL=
+VITE_MQTT_URL=ws://127.0.0.1:9001
+CATALOG_PROXY_TARGET=http://127.0.0.1:8102
+MATCH_PROXY_TARGET=http://127.0.0.1:8103
+```
+
+Le due variabili `*_PROXY_TARGET` sono lette solo dalla configurazione Vite del
+server di sviluppo; non vengono esposte al bundle. Se non hai ancora un `.env`
+nella root del repository, crealo da `.env.example` e imposta in
+`POSTGRES_HOST_PORT` una porta libera (per esempio `5433` se `5432` è occupata).
+Poi avvia database e broker dal root:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d
+```
+
+In due terminali distinti, dalla directory `services/`, avvia Catalog e Match:
+
+```powershell
+.\gradlew.bat :catalog:bootRun --args="--spring.profiles.active=local"
+```
+
+```powershell
+.\gradlew.bat :match:bootRun
+```
+
+Il profilo `local` del Catalog carica i dati demo persistiti nel database. Questo
+è un backend reale, ma i record sono dati dimostrativi, non dati di produzione.
+Il servizio Match non pre-semina partite attive.
+
 - `VITE_API_BASE_URL`: origine/prefisso REST per Catalog e Match; vuoto usa
   l’origine della pagina. I path `/api/catalog` e `/api/match` derivano dai
   contratti.
@@ -50,6 +89,8 @@ VITE_MQTT_URL=wss://broker.example.test/mqtt
   simulatore Console in modalità reale.
 - `VITE_USE_MOCKS`: `true` seleziona gli adattatori locali; `false` seleziona i
   client REST, SSE e MQTT. Valori diversi generano un errore di configurazione.
+- `CATALOG_PROXY_TARGET` e `MATCH_PROXY_TARGET`: target opzionali per il dev
+  server Vite quando si eseguono i servizi Spring locali senza gateway.
 
 Le richieste REST hanno timeout e un retry limitato per errori di rete, HTTP 5xx
 e 429. EventSource usa la riconnessione nativa del browser e ne espone lo stato;

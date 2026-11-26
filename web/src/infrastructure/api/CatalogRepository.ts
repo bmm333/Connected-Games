@@ -1,7 +1,7 @@
 import createClient from 'openapi-fetch'
 import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
 import type { TableLookup } from '@domain/catalog/TableLookup'
-import type { paths } from './generated/catalog'
+import type { paths } from '@shared/api/generated/catalog'
 import { createRetryingFetch } from '@shared/communication/retryingFetch'
 import { communicationConfig, communicationRoutes, apiUrl } from '@shared/communication/config'
 

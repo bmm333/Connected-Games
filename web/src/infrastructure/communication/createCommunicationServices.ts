@@ -1,6 +1,7 @@
 import { createUuidV7 } from '@domain/simulator'
 import { createCatalogRepository } from '@infrastructure/api/CatalogRepository'
 import { createMatchRestClient } from '@infrastructure/api/MatchRestClient'
+import { createStatsRepository } from '@infrastructure/api/StatsRepository'
 import { createMockCommunicationServices } from '@infrastructure/mock/MockCommunicationServices'
 import { createMqttClientService } from '@infrastructure/realtime/MqttClientService'
 import { createMqttMatchEventPublisher } from '@infrastructure/realtime/MqttMatchEventPublisher'
@@ -33,6 +34,9 @@ export function createCommunicationServices(
       ...createMatchRestClient(config.apiBaseUrl),
       ...createMatchSseClient(config.sseUrl ?? config.apiBaseUrl),
     },
+    stats: createStatsRepository(
+      apiUrl(config.apiBaseUrl, communicationRoutes.stats),
+    ),
     matchEvents: mqttUrl
       ? matchEvents
       : {

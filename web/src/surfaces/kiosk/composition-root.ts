@@ -7,6 +7,7 @@ import {
 import { createAuthDependencies } from '@surfaces/shared/auth-dependencies'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
 import type { MatchRestClient, MatchSseClient } from '@domain/simulator'
+import type { StatsRepository } from '@domain/stats/StatsRepository'
 
 type KioskMatchService = MatchRestClient & MatchSseClient
 
@@ -15,6 +16,7 @@ export interface KioskDependencies {
   queryPersister: ReturnType<typeof createPlatformQueryPersister>
   auth: ReturnType<typeof createAuthDependencies>
   matches: KioskMatchService
+  stats: StatsRepository
 }
 
 export function createKioskDependencies(): KioskDependencies {
@@ -27,7 +29,8 @@ export function createKioskDependencies(): KioskDependencies {
       platformStore,
       'PARTITA_QUERY_CACHE_KIOSK_V1',
     ),
-    auth: createAuthDependencies(),
+    auth: createAuthDependencies(platformStore),
     matches: communication.matches,
+    stats: communication.stats,
   }
 }

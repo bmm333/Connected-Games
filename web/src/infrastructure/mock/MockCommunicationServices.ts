@@ -1,5 +1,6 @@
 import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
 import type { GameType, Table, TableLookup, Venue, VenueSummary } from '@domain/catalog/TableLookup'
+import type { StatsRepository } from '@domain/stats/StatsRepository'
 import type {
   Match,
   MatchCompleted,
@@ -248,11 +249,26 @@ function createMockMatchEvents(
   }
 }
 
+function createMockStats(): StatsRepository {
+  return {
+    async getLeaderboard() {
+      return []
+    },
+    async getParticipantSummary() {
+      return undefined
+    },
+    async getVenueSummary() {
+      return undefined
+    },
+  }
+}
+
 export function createMockCommunicationServices(): CommunicationServices {
   const matches = createMockMatchServices()
   return {
     catalog: createMockCatalog(),
     matches,
     matchEvents: createMockMatchEvents(matches),
+    stats: createMockStats(),
   }
 }

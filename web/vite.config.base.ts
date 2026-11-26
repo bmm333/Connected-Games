@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
+import { loadEnv } from 'vite'
 
 const r = (...parts: string[]) => path.resolve(import.meta.dirname, 'src', ...parts)
 const isApiRequest = ({ url }: { url: URL }) =>
@@ -38,6 +39,35 @@ export const SHARED_ALIASES = {
   '@surfaces':        r('surfaces'),
 }
 
+export function createLocalApiProxy(env: Record<string, string | undefined>) {
+  return {
+    ...(env.CATALOG_PROXY_TARGET
+      ? {
+        '/api/catalog': {
+          target: env.CATALOG_PROXY_TARGET,
+          changeOrigin: true,
+        },
+      }
+      : {}),
+    ...(env.MATCH_PROXY_TARGET
+      ? {
+        '/api/match': {
+          target: env.MATCH_PROXY_TARGET,
+          changeOrigin: true,
+        },
+      }
+      : {}),
+    ...(env.AUTH_PROXY_TARGET
+      ? {
+        '/api/auth': {
+          target: env.AUTH_PROXY_TARGET,
+          changeOrigin: true,
+        },
+      }
+      : {}),
+  }
+}
+
 export type SurfaceName = 'player' | 'kiosk' | 'console'
 
 interface SurfaceMeta {
@@ -69,6 +99,7 @@ const SURFACE_METAS: Record<SurfaceName, SurfaceMeta> = {
 }
 
 export function createSurfaceConfig(surface: SurfaceName): UserConfig {
+  const env = loadEnv('development', import.meta.dirname, '')
   const meta = SURFACE_METAS[surface]
   const surfaceRoot = path.resolve(import.meta.dirname, 'src/surfaces', surface)
   const distOutDir = path.resolve(import.meta.dirname, 'dist', surface)
@@ -76,6 +107,7 @@ export function createSurfaceConfig(surface: SurfaceName): UserConfig {
 
   return {
     root: surfaceRoot,
+    envDir: import.meta.dirname,
     publicDir: publicPath,
 
     resolve: {
@@ -84,6 +116,7 @@ export function createSurfaceConfig(surface: SurfaceName): UserConfig {
 
     server: {
       port: meta.port,
+      proxy: createLocalApiProxy(env),
     },
 
     build: {

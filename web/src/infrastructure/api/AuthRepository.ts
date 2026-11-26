@@ -1,3 +1,7 @@
+// TODO: refactor to use `openapi-fetch` with the generated types from
+// `@shared/api/generated/identity` (like CatalogRepository does) so that
+// breaking API changes are caught at compile time.  The manual DTO mapping
+// below works but is not contract-safe.
 import type { AuthRepository as DomainAuthRepository } from '@domain/auth/AuthRepository'
 import type {
   DeviceCredentials,

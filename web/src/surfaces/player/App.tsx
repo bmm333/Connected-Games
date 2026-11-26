@@ -1,10 +1,10 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { queryClient } from '@shared/api'
 import { PlayerRouter } from './router'
-import { createPlayerDependencies } from './composition-root'
+import { getPlayerDependencies } from './composition-root'
 import { ThemeProvider } from '@ui'
 
-const dependencies = createPlayerDependencies()
+const dependencies = getPlayerDependencies()
 
 export function App() {
   return (

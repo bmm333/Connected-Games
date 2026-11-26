@@ -1,7 +1,7 @@
 import { QrPage as SharedQrPage } from '@surfaces/shared/pages/QrPage/QrPage'
-import { createPlayerDependencies } from '../../composition-root'
+import { getPlayerDependencies } from '../../composition-root'
 
-const dependencies = createPlayerDependencies()
+const dependencies = getPlayerDependencies()
 
 export function PlayerQrPage() {
   return (

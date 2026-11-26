@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import type { TableLookup } from '@domain/catalog/TableLookup'
-import { createPlayerDependencies } from '../composition-root'
+import { getPlayerDependencies } from '../composition-root'
 
-const dependencies = createPlayerDependencies()
+const dependencies = getPlayerDependencies()
 
 export function useResolveTableByCode(code: string) {
   return useQuery<TableLookup>({

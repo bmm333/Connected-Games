@@ -24,6 +24,9 @@ import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/Valida
 import type { UserSession } from '@domain/console/auth/UserSession'
 import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
+import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
+import type { MatchRestClient } from '@domain/simulator'
+import type { StatsRepository } from '@domain/stats/StatsRepository'
 
 export interface ConsoleDependencies {
   storage: KeyValueStoreUseCases
@@ -34,6 +37,9 @@ export interface ConsoleDependencies {
   devices: ReturnType<typeof createGetDevicesStatusUseCase>
   executeDeviceCommand: ReturnType<typeof createExecuteDeviceCommandUseCase>
   simulator: ReturnType<typeof createMatchSimulatorUseCase>
+  catalog: SimulatorCatalogRepository
+  matches: MatchRestClient
+  stats: StatsRepository
   consoleAuth: {
     sessionStore: ReturnType<typeof createConsoleSessionStore>
     login: ReturnType<typeof createLoginWithRoleUseCase>
@@ -64,7 +70,7 @@ export function createConsoleDependencies(): ConsoleDependencies {
       platformStore,
       'PARTITA_QUERY_CACHE_CONSOLE_V1',
     ),
-    auth: createAuthDependencies(),
+    auth: createAuthDependencies(platformStore),
     overview: createGetLocalOverviewUseCase(overviewRepository),
     tableData: createFetchTableDataUseCase(tableDataRepository),
     devices: createGetDevicesStatusUseCase(deviceRepository),
@@ -73,6 +79,9 @@ export function createConsoleDependencies(): ConsoleDependencies {
       communication.catalog,
       communication.matchEvents,
     ),
+    catalog: communication.catalog,
+    matches: communication.matches,
+    stats: communication.stats,
     consoleAuth: {
       sessionStore: consoleSessionStore,
       login: createLoginWithRoleUseCase(

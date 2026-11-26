@@ -1,13 +1,16 @@
-import { Link } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useSearchParams } from 'react-router'
+import type { StatsRepository } from '@domain/stats/StatsRepository'
 import { Badge, Card } from '@ui'
 
-export function LeaderboardView() {
-  const leaders = [
-    { rank: 1, name: 'DragonSlayer', score: 2450 },
-    { rank: 2, name: 'CyberViper', score: 2180 },
-    { rank: 3, name: 'ShadowNinja', score: 1940 },
-    { rank: 4, name: 'PixelMaster', score: 1720 },
-  ]
+export function LeaderboardView({ stats }: { stats: StatsRepository }) {
+  const [searchParams] = useSearchParams()
+  const venueId = searchParams.get('venueId') ?? undefined
+
+  const leaderboardQuery = useQuery({
+    queryKey: ['stats', 'leaderboard', venueId],
+    queryFn: () => stats.getLeaderboard({ venueId, limit: 20 }),
+  })
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -20,26 +23,38 @@ export function LeaderboardView() {
       </div>
 
       <Card elevated className="overflow-hidden p-0">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
-              <th className="p-4">Pos</th>
-              <th className="p-4">Giocatore</th>
-              <th className="p-4 text-right">Punti</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-850">
-            {leaders.map(l => (
-              <tr key={l.rank} className="hover:bg-neutral-800/40 transition">
-                <td className="p-4"><Badge tone={l.rank === 1 ? 'warning' : 'neutral'}>#{l.rank}</Badge></td>
-                <td className="p-4 font-medium">{l.name}</td>
-                <td className="p-4 text-right font-mono font-semibold text-emerald-400">
-                  {l.score}
-                </td>
+        {leaderboardQuery.isPending ? (
+          <p role="status" className="p-6 text-sm text-[var(--cg-color-label-secondary)]">Caricamento classifica…</p>
+        ) : leaderboardQuery.isError ? (
+          <p role="alert" className="p-6 text-sm text-[var(--cg-color-status-warning)]">Impossibile caricare la classifica.</p>
+        ) : leaderboardQuery.data.length === 0 ? (
+          <p className="p-6 text-sm text-[var(--cg-color-label-secondary)]">Nessun risultato disponibile in classifica.</p>
+        ) : (
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
+                <th className="p-4">Pos</th>
+                <th className="p-4">Giocatore</th>
+                <th className="p-4 text-right">Vittorie</th>
+                <th className="p-4 text-right">Punti</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-neutral-850">
+              {leaderboardQuery.data.map((entry) => (
+                <tr key={entry.participantId} className="hover:bg-neutral-800/40 transition">
+                  <td className="p-4">
+                    <Badge tone={entry.rank === 1 ? 'warning' : 'neutral'}>#{entry.rank}</Badge>
+                  </td>
+                  <td className="p-4 font-medium">{entry.displayName ?? entry.participantId}</td>
+                  <td className="p-4 text-right font-mono">{entry.wins}</td>
+                  <td className="p-4 text-right font-mono font-semibold text-emerald-400">
+                    {entry.pointsFor}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
     </div>
   )

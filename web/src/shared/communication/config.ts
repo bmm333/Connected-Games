@@ -8,6 +8,8 @@ export interface CommunicationConfig {
 export const communicationRoutes = {
   catalog: '/api/catalog',
   match: '/api/match',
+  stats: '/api/stats',
+  identity: '/api/identity',
   matchCurrent: (tableId: string) =>
     `/tables/${encodeURIComponent(tableId)}/current-match`,
   matchLive: (tableId: string) =>
