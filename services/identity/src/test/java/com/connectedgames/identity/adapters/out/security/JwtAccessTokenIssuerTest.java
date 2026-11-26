@@ -1,5 +1,8 @@
 package com.connectedgames.identity.adapters.out.security;
 
+import com.connectedgames.identity.domain.device.Device;
+import com.connectedgames.identity.domain.device.DeviceId;
+import com.connectedgames.identity.domain.device.Surface;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.session.SessionId;
 import com.connectedgames.identity.domain.session.SessionKind;
@@ -60,6 +63,40 @@ class JwtAccessTokenIssuerTest {
         assertThat(jwt.<List<Map<String, String>>>getClaim("roles")).containsExactly(
                 Map.of("role", "PLAYER"),
                 Map.of("role", "VENUE_MANAGER", "venueId", VENUE.toString(), "organizationId", ORGANIZATION.toString()));
+    }
+
+    @Test
+    void aDisplayTokenCarriesItsVenueTableAndOrganizationAndNoRoles() {
+        Instant now = Instant.now();
+        Device device = new Device(new DeviceId(UUID.randomUUID()), VENUE, ORGANIZATION, UUID.randomUUID(),
+                Surface.KIOSK, now);
+        Session session = Session.start(new SessionId(UUID.randomUUID()), SessionKind.DEVICE, device.id().value(), now);
+
+        AccessToken token = issuer.issueForDevice(session, device, now);
+        Jwt jwt = decoder.decode(token.value());
+
+        assertThat(jwt.getClaimAsString("iss")).isEqualTo("connected-games-identity");
+        assertThat(jwt.getAudience()).containsExactly("connected-games");
+        assertThat(jwt.getSubject()).isEqualTo(device.id().value().toString());
+        assertThat(jwt.getClaimAsString("sid")).isEqualTo(session.id().value().toString());
+        assertThat(jwt.getClaimAsString("kind")).isEqualTo("DEVICE");
+        assertThat(jwt.getClaimAsString("venueId")).isEqualTo(VENUE.toString());
+        assertThat(jwt.getClaimAsString("tableId")).isEqualTo(device.tableId().toString());
+        assertThat(jwt.getClaimAsString("organizationId")).isEqualTo(ORGANIZATION.toString());
+        assertThat(jwt.<List<Map<String, String>>>getClaim("roles")).isEmpty();
+        assertThat(token.expiresAt()).isEqualTo(now.plus(Duration.ofMinutes(15)));
+    }
+
+    @Test
+    void aUserTokenHasNoVenueTableOrOrganizationOutsideItsRoles() {
+        Instant now = Instant.now();
+
+        Jwt jwt = decoder.decode(issuer.issue(sessionStartedAt(now),
+                List.of(RoleAssignment.venueManager(VENUE, ORGANIZATION)), now).value());
+
+        assertThat(jwt.getClaimAsString("venueId")).isNull();
+        assertThat(jwt.getClaimAsString("tableId")).isNull();
+        assertThat(jwt.getClaimAsString("organizationId")).isNull();
     }
 
     @Test

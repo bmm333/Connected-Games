@@ -4,6 +4,7 @@ import com.connectedgames.identity.domain.PlayerId;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public record User(UserId id, Email email, String displayName, PasswordHash passwordHash,
@@ -33,6 +34,13 @@ public record User(UserId id, Email email, String displayName, PasswordHash pass
         return roles.stream().anyMatch(assignment ->
                 assignment.role() == Role.VENUE_MANAGER && 
                 assignment.venueId().equals(venueId));       
+    }
+    public Optional<UUID> organizationOf(UUID venueId)
+    {
+        return roles.stream()
+                .filter(assignment -> assignment.role() == Role.VENUE_MANAGER && assignment.venueId().equals(venueId))
+                .map(RoleAssignment::organizationId)
+                .findFirst();
     }
     public boolean hasRole(Role role) {
         return roles.stream().anyMatch(assignment -> assignment.role() == role);

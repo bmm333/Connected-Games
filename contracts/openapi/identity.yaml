@@ -42,6 +42,10 @@ info:
     `kind`, `roles` (role plus optional `venueId` or `organizationId`), `iat`, `exp`,
     `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
 
+    A `DEVICE` token has no roles. It carries `venueId`, `tableId` and `organizationId` of
+    the table it is paired with, so a display can read the data of its own venue. The
+    organization is the one of the venue manager who created the pairing code.
+
     ## Rules
 
     - Pairing codes have 6 characters, are valid for 10 minutes and can be used

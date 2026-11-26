@@ -20,6 +20,7 @@ class PairDeviceServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-11-18T20:00:00Z");
     private static final UUID VENUE = UUID.randomUUID();
+    private static final UUID ORGANIZATION = UUID.randomUUID();
     private static final UUID TABLE = UUID.randomUUID();
 
     private final TestClock clock = new TestClock(NOW);
@@ -36,7 +37,7 @@ class PairDeviceServiceTest {
             new InMemoryGuestRepository(), new InMemoryUserRepository(), devices, tokens, clock);
 
     private void issue(String value, UUID table) {
-        codes.save(PairingCode.issue(value, VENUE, table, Surface.KIOSK, clock.instant()));
+        codes.save(PairingCode.issue(value, VENUE, ORGANIZATION, table, Surface.KIOSK, clock.instant()));
     }
 
     @Test
@@ -47,6 +48,7 @@ class PairDeviceServiceTest {
 
         Device device = paired.device();
         assertThat(device.venueId()).isEqualTo(VENUE);
+        assertThat(device.organizationId()).isEqualTo(ORGANIZATION);
         assertThat(device.tableId()).isEqualTo(TABLE);
         assertThat(device.surface()).isEqualTo(Surface.KIOSK);
         assertThat(device.pairedAt()).isEqualTo(NOW);
@@ -66,6 +68,16 @@ class PairDeviceServiceTest {
 
         assertThat(accessTokens.lastRoles()).isEmpty();
         assertThat(accessTokens.lastSession().kind()).isEqualTo(SessionKind.DEVICE);
+    }
+
+    @Test
+    void theTokenOfTheDisplayIsIssuedForItsDevice() {
+        issue("K7F2QX", TABLE);
+
+        DeviceSession paired = service.pairDevice("K7F2QX", Surface.KIOSK);
+
+        assertThat(accessTokens.lastDevice()).isEqualTo(paired.device());
+        assertThat(accessTokens.lastDevice().organizationId()).isEqualTo(ORGANIZATION);
     }
 
     @Test
@@ -139,5 +151,16 @@ class PairDeviceServiceTest {
         assertThat(device.session().refreshToken()).isNotEqualTo(paired.session().refreshToken());
         // a device session is extended each time, like a user one
         assertThat(device.session().refreshExpiresAt()).isEqualTo(clock.instant().plus(Duration.ofDays(90)));
+    }
+
+    @Test
+    void theRefreshedTokenCarriesTheOrganizationAgain() {
+        issue("K7F2QX", TABLE);
+        DeviceSession paired = service.pairDevice("K7F2QX", Surface.KIOSK);
+
+        refresh.refreshSession(paired.session().refreshToken());
+
+        assertThat(accessTokens.lastDevice()).isEqualTo(paired.device());
+        assertThat(accessTokens.lastRoles()).isEmpty();
     }
 }

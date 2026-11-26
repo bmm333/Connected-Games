@@ -2,6 +2,7 @@ package com.connectedgames.identity.adapters.out.security;
 
 import com.connectedgames.identity.application.port.out.AccessToken;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
+import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.user.RoleAssignment;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
@@ -32,22 +33,36 @@ class JwtAccessTokenIssuer implements AccessTokenIssuer {
 
     @Override
     public AccessToken issue(Session session, List<RoleAssignment> roles, Instant now) {
-        Instant expiresAt = now.plus(Session.ACCESS_TOKEN_LIFETIME);
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        return sign(baseClaims(session, now)
+                .claim("roles", roles.stream().map(JwtAccessTokenIssuer::roleClaim).toList()), now);
+    }
+
+    @Override
+    public AccessToken issueForDevice(Session session, Device device, Instant now) {
+        return sign(baseClaims(session, now)
+                .claim("roles", List.of())
+                .claim("venueId", device.venueId().toString())
+                .claim("tableId", device.tableId().toString())
+                .claim("organizationId", device.organizationId().toString()), now);
+    }
+
+    private static JwtClaimsSet.Builder baseClaims(Session session, Instant now) {
+        return JwtClaimsSet.builder()
                 .issuer(ISSUER)
                 .audience(List.of(AUDIENCE))
                 .subject(session.subjectId().toString())
                 .claim("sid", session.id().value().toString())
                 .claim("kind", session.kind().name())
-                .claim("roles", roles.stream().map(JwtAccessTokenIssuer::roleClaim).toList())
                 .issuedAt(now)
-                .expiresAt(expiresAt)
-                .id(UUID.randomUUID().toString())
-                .build();
+                .expiresAt(now.plus(Session.ACCESS_TOKEN_LIFETIME))
+                .id(UUID.randomUUID().toString());
+    }
+
+    private AccessToken sign(JwtClaimsSet.Builder claims, Instant now) {
         // the encoder adds the kid of the signing key to the header
         String value = encoder.encode(JwtEncoderParameters.from(
-                JwsHeader.with(SignatureAlgorithm.RS256).build(), claims)).getTokenValue();
-        return new AccessToken(value, expiresAt);
+                JwsHeader.with(SignatureAlgorithm.RS256).build(), claims.build())).getTokenValue();
+        return new AccessToken(value, now.plus(Session.ACCESS_TOKEN_LIFETIME));
     }
 
     /** One role as in the contract: {"role": "VENUE_MANAGER", "venueId": "...", "organizationId": "..."} */

@@ -2,7 +2,6 @@ package com.connectedgames.identity.application;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 
 import com.connectedgames.identity.application.port.in.ActiveSession;
 import com.connectedgames.identity.application.port.in.DeviceSession;
@@ -102,6 +101,6 @@ public final class RefreshSessionService implements RefreshSessionUseCase
     {
         Device device=devices.findById(new DeviceId(session.subjectId()))
                 .orElseThrow(() -> new IllegalStateException("Session " + session.id().value() + " references a missing device"));
-        return new DeviceSession(device,tokens.issue(session,List.of(),now));
+        return new DeviceSession(device,tokens.issueForDevice(session,device,now));
     }
 }

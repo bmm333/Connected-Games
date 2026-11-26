@@ -31,13 +31,11 @@ public final class CreatePairingCodeService implements CreatePairingCodeUseCase{
     public PairingCode createPairingCode(UserId requester, UUID venueId, UUID tableId,Surface surface){
         User user = users.findById(requester).orElseThrow(() -> new IllegalStateException("User " +
                 requester.value() + " does not exist"));
-        if(!user.managesVenue(venueId)){
-            throw new NotVenueManagerException();
-        }
+        UUID organizationId = user.organizationOf(venueId).orElseThrow(NotVenueManagerException::new);
         Instant now = clock.instant();
         PairingCode code;
         do{
-            code = PairingCode.issue(generator.generate(),venueId,tableId,surface,now);
+            code = PairingCode.issue(generator.generate(),venueId,organizationId,tableId,surface,now);
         }while(isInUse(code.value(),now));
         codes.save(code);
         return code;
