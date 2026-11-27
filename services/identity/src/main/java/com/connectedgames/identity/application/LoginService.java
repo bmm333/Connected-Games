@@ -48,6 +48,6 @@ public final class LoginService implements LoginUseCase
         Session session=Session.start(new SessionId(UUID.randomUUID()),SessionKind.USER,user.id().value(),now);
         sessions.save(session);
 
-        return new UserSession(user,tokens.issue(session,user.roles(),now));
+        return new UserSession(user,tokens.issue(session,user.playerId(),user.roles(),now));
     }
 }

@@ -44,6 +44,6 @@ public final class CreateGuestSessionService implements CreateGuestSessionUseCas
                 guest.playerId().value(),now);
         sessions.save(session);
 
-        return new GuestSession(guest,tokens.issue(session,SessionTokens.GUEST_ROLES,now));
+        return new GuestSession(guest,tokens.issue(session,guest.playerId(),SessionTokens.GUEST_ROLES,now));
     }
 }

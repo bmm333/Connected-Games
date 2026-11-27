@@ -58,7 +58,7 @@ public final class RegisterService implements RegisterUseCase
         Session session=Session.start(new SessionId(UUID.randomUUID()),SessionKind.USER,user.id().value(),now);
         sessions.save(session);
 
-        return new UserSession(user,tokens.issue(session,user.roles(),now));
+        return new UserSession(user,tokens.issue(session,user.playerId(),user.roles(),now));
     }
 
     // the guest session ends here: its refresh token must not keep a second way into the same player

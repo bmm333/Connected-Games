@@ -8,6 +8,7 @@ import com.connectedgames.identity.application.port.out.AccessToken;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
 import com.connectedgames.identity.application.port.out.RefreshTokenGenerator;
 import com.connectedgames.identity.application.port.out.RefreshTokenRepository;
+import com.connectedgames.identity.domain.PlayerId;
 import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.session.RefreshToken;
 import com.connectedgames.identity.domain.session.Session;
@@ -31,9 +32,9 @@ public final class SessionTokens
         this.accessTokens=accessTokens;
     }
 
-    IssuedSession issue(Session session,List<RoleAssignment> roles,Instant now)
+    IssuedSession issue(Session session,PlayerId playerId,List<RoleAssignment> roles,Instant now)
     {
-        return issued(session,accessTokens.issue(session,roles,now),now);
+        return issued(session,accessTokens.issue(session,playerId,roles,now),now);
     }
 
     IssuedSession issueForDevice(Session session,Device device,Instant now)

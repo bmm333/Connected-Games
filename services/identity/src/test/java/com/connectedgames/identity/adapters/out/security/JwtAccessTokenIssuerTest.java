@@ -1,5 +1,6 @@
 package com.connectedgames.identity.adapters.out.security;
 
+import com.connectedgames.identity.domain.PlayerId;
 import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.device.DeviceId;
 import com.connectedgames.identity.domain.device.Surface;
@@ -28,6 +29,7 @@ class JwtAccessTokenIssuerTest {
 
     private static final UUID VENUE = UUID.randomUUID();
     private static final UUID ORGANIZATION = UUID.randomUUID();
+    private static final PlayerId PLAYER_ID = new PlayerId(UUID.randomUUID());
 
     private final JwtConfiguration configuration = new JwtConfiguration();
     private final RSAKey key;
@@ -49,7 +51,7 @@ class JwtAccessTokenIssuerTest {
         Instant now = Instant.now();
         Session session = sessionStartedAt(now);
 
-        AccessToken token = issuer.issue(session, List.of(RoleAssignment.of(Role.PLAYER),
+        AccessToken token = issuer.issue(session, PLAYER_ID, List.of(RoleAssignment.of(Role.PLAYER),
                 RoleAssignment.venueManager(VENUE, ORGANIZATION)), now);
         Jwt jwt = decoder.decode(token.value());
 
@@ -59,6 +61,7 @@ class JwtAccessTokenIssuerTest {
         assertThat(jwt.getSubject()).isEqualTo(session.subjectId().toString());
         assertThat(jwt.getClaimAsString("sid")).isEqualTo(session.id().value().toString());
         assertThat(jwt.getClaimAsString("kind")).isEqualTo("USER");
+        assertThat(jwt.getClaimAsString("playerId")).isEqualTo(PLAYER_ID.value().toString());
         assertThat(jwt.getId()).isNotBlank();
         assertThat(jwt.<List<Map<String, String>>>getClaim("roles")).containsExactly(
                 Map.of("role", "PLAYER"),
@@ -84,14 +87,26 @@ class JwtAccessTokenIssuerTest {
         assertThat(jwt.getClaimAsString("tableId")).isEqualTo(device.tableId().toString());
         assertThat(jwt.getClaimAsString("organizationId")).isEqualTo(ORGANIZATION.toString());
         assertThat(jwt.<List<Map<String, String>>>getClaim("roles")).isEmpty();
+        assertThat(jwt.getClaimAsString("playerId")).isNull();
         assertThat(token.expiresAt()).isEqualTo(now.plus(Duration.ofMinutes(15)));
+    }
+
+    @Test
+    void theSubjectOfAUserIsNotItsPlayer() {
+        Instant now = Instant.now();
+        Session session = sessionStartedAt(now);
+
+        Jwt jwt = decoder.decode(issuer.issue(session, PLAYER_ID, List.of(RoleAssignment.of(Role.PLAYER)), now).value());
+
+        assertThat(jwt.getSubject()).isEqualTo(session.subjectId().toString());
+        assertThat(jwt.getClaimAsString("playerId")).isNotEqualTo(jwt.getSubject());
     }
 
     @Test
     void aUserTokenHasNoVenueTableOrOrganizationOutsideItsRoles() {
         Instant now = Instant.now();
 
-        Jwt jwt = decoder.decode(issuer.issue(sessionStartedAt(now),
+        Jwt jwt = decoder.decode(issuer.issue(sessionStartedAt(now), PLAYER_ID,
                 List.of(RoleAssignment.venueManager(VENUE, ORGANIZATION)), now).value());
 
         assertThat(jwt.getClaimAsString("venueId")).isNull();
@@ -103,7 +118,7 @@ class JwtAccessTokenIssuerTest {
     void lastsFifteenMinutesAndNamesItsKey() {
         Instant now = Instant.now();
 
-        AccessToken token = issuer.issue(sessionStartedAt(now), List.of(RoleAssignment.of(Role.PLAYER)), now);
+        AccessToken token = issuer.issue(sessionStartedAt(now), PLAYER_ID, List.of(RoleAssignment.of(Role.PLAYER)), now);
         Jwt jwt = decoder.decode(token.value());
 
         assertThat(token.expiresAt()).isEqualTo(now.plus(Duration.ofMinutes(15)));
@@ -115,7 +130,7 @@ class JwtAccessTokenIssuerTest {
     void anExpiredTokenIsRefused() {
         Instant anHourAgo = Instant.now().minus(Duration.ofHours(1));
 
-        AccessToken token = issuer.issue(sessionStartedAt(anHourAgo), List.of(RoleAssignment.of(Role.PLAYER)), anHourAgo);
+        AccessToken token = issuer.issue(sessionStartedAt(anHourAgo), PLAYER_ID, List.of(RoleAssignment.of(Role.PLAYER)), anHourAgo);
 
         assertThatThrownBy(() -> decoder.decode(token.value())).isInstanceOf(JwtValidationException.class);
     }
@@ -126,7 +141,7 @@ class JwtAccessTokenIssuerTest {
         JwtAccessTokenIssuer other = new JwtAccessTokenIssuer(configuration.jwtEncoder(otherKey));
         Instant now = Instant.now();
 
-        AccessToken token = other.issue(sessionStartedAt(now), List.of(RoleAssignment.of(Role.PLAYER)), now);
+        AccessToken token = other.issue(sessionStartedAt(now), PLAYER_ID, List.of(RoleAssignment.of(Role.PLAYER)), now);
 
         assertThatThrownBy(() -> decoder.decode(token.value())).isInstanceOf(Exception.class);
     }

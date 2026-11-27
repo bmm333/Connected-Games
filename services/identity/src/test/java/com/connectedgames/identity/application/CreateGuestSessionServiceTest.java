@@ -83,6 +83,13 @@ class CreateGuestSessionServiceTest {
     }
 
     @Test
+    void signsTheAccessTokenWithThePlayerOfTheGuest() {
+        GuestSession created = service.createGuestSession(new Nickname("Bomber"));
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(created.guest().playerId());
+    }
+
+    @Test
     void everyGuestGetsItsOwnPlayerAndSession() {
         GuestSession first = service.createGuestSession(new Nickname("Bomber"));
         GuestSession second = service.createGuestSession(new Nickname("Bomber"));

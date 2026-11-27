@@ -39,12 +39,16 @@ info:
     Header: `alg`, `kid` (key id in the JWKS). Claims: `iss`
     (`connected-games-identity`), `aud` (`connected-games`), `sub` (user, player or
     device id), `sid` (session id, used by logout and by a guest that registers),
-    `kind`, `roles` (role plus optional `venueId` or `organizationId`), `iat`, `exp`,
-    `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
+    `kind`, `playerId` (guests and users), `roles` (role plus optional `venueId` or `organizationId`),
+    `iat`, `exp`, `jti`. Services must verify the signature, `iss`, `aud` and `exp`.
 
     A `DEVICE` token has no roles. It carries `venueId`, `tableId` and `organizationId` of
     the table it is paired with, so a display can read the data of its own venue. The
     organization is the one of the venue manager who created the pairing code.
+
+    A `GUEST` or `USER` token carries `playerId`, the player the statistics are about. For a
+    guest it is also the `sub`; the `sub` of a user is the user id, and registering keeps the
+    `playerId` of the guest. A `DEVICE` token has no `playerId`.
 
     ## Rules
 

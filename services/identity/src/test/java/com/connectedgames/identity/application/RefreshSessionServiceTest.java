@@ -102,6 +102,15 @@ class RefreshSessionServiceTest {
     }
 
     @Test
+    void signsTheRefreshedTokenOfAGuestWithItsPlayer() {
+        GuestSession created = guestSessions.createGuestSession(new Nickname("Bomber"));
+
+        service.refreshSession(created.session().refreshToken());
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(created.guest().playerId());
+    }
+
+    @Test
     void readsTheRolesOfTheUserAgain() {
         String first = loginAsMario();
         RoleAssignment manager = RoleAssignment.venueManager(UUID.randomUUID(), UUID.randomUUID());
@@ -111,6 +120,15 @@ class RefreshSessionServiceTest {
         service.refreshSession(first);
 
         assertThat(accessTokens.lastRoles()).containsExactly(PLAYER, manager);
+    }
+
+    @Test
+    void signsTheRefreshedTokenOfAUserWithItsPlayer() {
+        String first = loginAsMario();
+
+        service.refreshSession(first);
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(mario.playerId());
     }
 
     @Test
