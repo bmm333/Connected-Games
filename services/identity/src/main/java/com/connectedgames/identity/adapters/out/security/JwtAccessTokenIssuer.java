@@ -2,6 +2,7 @@ package com.connectedgames.identity.adapters.out.security;
 
 import com.connectedgames.identity.application.port.out.AccessToken;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
+import com.connectedgames.identity.domain.PlayerId;
 import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.user.RoleAssignment;
@@ -32,8 +33,9 @@ class JwtAccessTokenIssuer implements AccessTokenIssuer {
     }
 
     @Override
-    public AccessToken issue(Session session, List<RoleAssignment> roles, Instant now) {
+    public AccessToken issue(Session session, PlayerId playerId, List<RoleAssignment> roles, Instant now) {
         return sign(baseClaims(session, now)
+                .claim("playerId", playerId.value().toString())
                 .claim("roles", roles.stream().map(JwtAccessTokenIssuer::roleClaim).toList()), now);
     }
 

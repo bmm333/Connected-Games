@@ -67,6 +67,14 @@ class LoginServiceTest {
     }
 
     @Test
+    void signsTheAccessTokenWithThePlayerOfTheUserNotWithItsAccount() {
+        service.login(new Email("mario@example.com"), "secret123");
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(manager.playerId());
+        assertThat(accessTokens.lastPlayerId().value()).isNotEqualTo(manager.id().value());
+    }
+
+    @Test
     void ignoresTheCaseOfTheEmail() {
         UserSession logged = service.login(new Email("MARIO@Example.com"), "secret123");
 

@@ -30,7 +30,8 @@ class RegisterServiceTest {
     private final InMemoryRefreshTokenRepository refreshTokens = new InMemoryRefreshTokenRepository();
     private final FakeRefreshTokenGenerator tokenGenerator = new FakeRefreshTokenGenerator();
     private final FakePasswordHasher passwordHasher = new FakePasswordHasher();
-    private final SessionTokens tokens = new SessionTokens(refreshTokens, tokenGenerator, new FakeAccessTokenIssuer());
+    private final FakeAccessTokenIssuer accessTokens = new FakeAccessTokenIssuer();
+    private final SessionTokens tokens = new SessionTokens(refreshTokens, tokenGenerator, accessTokens);
 
     private final CreateGuestSessionService guestSessions = new CreateGuestSessionService(guests, sessions, tokens, clock);
     private final LoginService login = new LoginService(users, passwordHasher, sessions, tokens, clock);
@@ -82,6 +83,22 @@ class RegisterServiceTest {
         UserSession registered = registerGiulia(Optional.of(guest));
 
         assertThat(registered.user().playerId()).isEqualTo(guest.guest().playerId());
+    }
+
+    @Test
+    void theTokenOfAGuestThatRegistersCarriesTheSamePlayer() {
+        GuestSession guest = guestSessions.createGuestSession(new Nickname("Giulia"));
+
+        registerGiulia(Optional.of(guest));
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(guest.guest().playerId());
+    }
+
+    @Test
+    void theTokenOfANewUserCarriesItsPlayer() {
+        UserSession registered = registerGiulia(Optional.empty());
+
+        assertThat(accessTokens.lastPlayerId()).isEqualTo(registered.user().playerId());
     }
 
     @Test

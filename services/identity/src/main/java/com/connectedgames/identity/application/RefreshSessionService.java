@@ -85,7 +85,7 @@ public final class RefreshSessionService implements RefreshSessionUseCase
     {
         Guest guest=guests.findByPlayerId(new PlayerId(session.subjectId()))
                 .orElseThrow(() -> new IllegalStateException("Session " + session.id().value() + " references a missing guest"));
-        return new GuestSession(guest,tokens.issue(session,SessionTokens.GUEST_ROLES,now));
+        return new GuestSession(guest,tokens.issue(session,guest.playerId(),SessionTokens.GUEST_ROLES,now));
     }
 
     // roles are read again on every refresh, so a removed role is gone within one access token lifetime
@@ -93,7 +93,7 @@ public final class RefreshSessionService implements RefreshSessionUseCase
     {
         User user=users.findById(new UserId(session.subjectId()))
                 .orElseThrow(() -> new IllegalStateException("Session " + session.id().value() + " references a missing user"));
-        return new UserSession(user,tokens.issue(session,user.roles(),now));
+        return new UserSession(user,tokens.issue(session,user.playerId(),user.roles(),now));
     }
 
     // a display has no role; its device is loaded again so the tokens always describe the table it is paired with

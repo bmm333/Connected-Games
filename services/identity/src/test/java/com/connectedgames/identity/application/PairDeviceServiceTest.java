@@ -68,6 +68,7 @@ class PairDeviceServiceTest {
 
         assertThat(accessTokens.lastRoles()).isEmpty();
         assertThat(accessTokens.lastSession().kind()).isEqualTo(SessionKind.DEVICE);
+        assertThat(accessTokens.lastPlayerId()).isNull();
     }
 
     @Test
