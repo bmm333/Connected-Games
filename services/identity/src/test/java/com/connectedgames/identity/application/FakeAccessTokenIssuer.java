@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.connectedgames.identity.application.port.out.AccessToken;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
+import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.user.RoleAssignment;
 
@@ -12,16 +13,29 @@ import com.connectedgames.identity.domain.user.RoleAssignment;
 class FakeAccessTokenIssuer implements AccessTokenIssuer {
     private Session lastSession;
     private List<RoleAssignment> lastRoles;
+    private Device lastDevice;
 
     @Override
     public AccessToken issue(Session session, List<RoleAssignment> roles, Instant now)
     {
         lastSession = session;
         lastRoles = roles;
+        lastDevice = null;
+        return new AccessToken("access-" + session.id().value(), now.plus(Session.ACCESS_TOKEN_LIFETIME));
+    }
+
+    @Override
+    public AccessToken issueForDevice(Session session, Device device, Instant now)
+    {
+        lastSession = session;
+        lastRoles = List.of();
+        lastDevice = device;
         return new AccessToken("access-" + session.id().value(), now.plus(Session.ACCESS_TOKEN_LIFETIME));
     }
 
     Session lastSession() { return lastSession; }
+
+    Device lastDevice() { return lastDevice; }
 
     List<RoleAssignment> lastRoles() { return lastRoles; }
 }

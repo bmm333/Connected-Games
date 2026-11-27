@@ -8,6 +8,7 @@ import com.connectedgames.identity.application.port.out.AccessToken;
 import com.connectedgames.identity.application.port.out.AccessTokenIssuer;
 import com.connectedgames.identity.application.port.out.RefreshTokenGenerator;
 import com.connectedgames.identity.application.port.out.RefreshTokenRepository;
+import com.connectedgames.identity.domain.device.Device;
 import com.connectedgames.identity.domain.session.RefreshToken;
 import com.connectedgames.identity.domain.session.Session;
 import com.connectedgames.identity.domain.user.Role;
@@ -32,11 +33,19 @@ public final class SessionTokens
 
     IssuedSession issue(Session session,List<RoleAssignment> roles,Instant now)
     {
+        return issued(session,accessTokens.issue(session,roles,now),now);
+    }
+
+    IssuedSession issueForDevice(Session session,Device device,Instant now)
+    {
+        return issued(session,accessTokens.issueForDevice(session,device,now),now);
+    }
+
+    private IssuedSession issued(Session session,AccessToken accessToken,Instant now)
+    {
         // only the hash is stored; the plain token goes back to the client once
         String refreshToken=tokenGenerator.generate();
         refreshTokens.save(RefreshToken.issue(tokenGenerator.hash(refreshToken),session.id(),now));
-
-        AccessToken accessToken=accessTokens.issue(session,roles,now);
 
         return new IssuedSession(session.id(),session.kind(),accessToken.value(),accessToken.expiresAt(),
                 refreshToken,session.refreshExpiresAt());
