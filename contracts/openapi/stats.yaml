@@ -29,7 +29,9 @@ paths:
       tags: [Leaderboards]
       operationId: getLeaderboard
       summary: Ranking of the participants
-      description: Ordered by wins, then by point difference (pointsFor minus pointsAgainst).
+      description: >-
+        Ordered by wins, then by point difference (pointsFor minus pointsAgainst). Participants with the same
+        wins and the same difference share the rank. Only managers and displays can read it.
       parameters:
         - $ref: '#/components/parameters/VenueIdQuery'
         - $ref: '#/components/parameters/GameTypeIdQuery'
@@ -45,8 +47,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/LeaderboardEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /participants/{participantId}/summary:
     get:
@@ -66,8 +72,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ParticipantSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -93,8 +103,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ParticipantMatch'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
   
@@ -112,8 +126,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MatchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -135,8 +153,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VenueSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -211,14 +233,29 @@ components:
         minimum: 0
         default: 0
   responses:
+    BadRequest:
+      description: A parameter is not valid (a malformed id or date, a limit out of range, from after to)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Unauthorized:
       description: Token missing or invalid
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: >-
+        The token is valid but cannot read this. A player can read only its own participant and matches, never a
+        leaderboard or a venue. A token with no organization and no player cannot read anything.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     NotFound:
-      description: Resource not found
+      description: >-
+        Resource not found, or not visible to the token: the data of another organization looks like missing data
       content:
         application/problem+json:
           schema:
@@ -495,5 +532,3 @@ components:
           type: string
         instance:
           type: string
-# not final 
-
