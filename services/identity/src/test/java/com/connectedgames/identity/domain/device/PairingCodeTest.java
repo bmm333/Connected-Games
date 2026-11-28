@@ -11,15 +11,29 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 class PairingCodeTest {
 
     private static final Instant NOW = Instant.parse("2026-11-18T20:00:00Z");
     private static final UUID VENUE = UUID.randomUUID();
+    private static final UUID ORGANIZATION = UUID.randomUUID();
     private static final UUID TABLE = UUID.randomUUID();
 
     private PairingCode issued() {
-        return PairingCode.issue("K7F2QX", VENUE, TABLE, Surface.KIOSK, NOW);
+        return PairingCode.issue("K7F2QX", VENUE, ORGANIZATION, TABLE, Surface.KIOSK, NOW);
+    }
+
+    @Test
+    void keepsTheOrganizationOfTheVenue() {
+        assertThat(issued().organizationId()).isEqualTo(ORGANIZATION);
+        assertThat(issued().used(NOW.plusSeconds(1)).organizationId()).isEqualTo(ORGANIZATION);
+    }
+
+    @Test
+    void needsAnOrganization() {
+        assertThatNullPointerException()
+                .isThrownBy(() -> PairingCode.issue("K7F2QX", VENUE, null, TABLE, Surface.KIOSK, NOW));
     }
 
     @Test
@@ -54,6 +68,6 @@ class PairingCodeTest {
     @ValueSource(strings = {"K7F2Q", "K7F2QXX", "k7f2qx", "K7F 2X", "K7F2Q-", ""})
     void refusesWhatIsNotSixUppercaseLettersOrDigits(String value) {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> PairingCode.issue(value, VENUE, TABLE, Surface.KIOSK, NOW));
+                .isThrownBy(() -> PairingCode.issue(value, VENUE, ORGANIZATION, TABLE, Surface.KIOSK, NOW));
     }
 }

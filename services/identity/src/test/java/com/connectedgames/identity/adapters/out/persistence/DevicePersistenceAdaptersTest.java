@@ -43,7 +43,7 @@ class DevicePersistenceAdaptersTest {
     }
 
     private Device deviceAt(UUID tableId) {
-        return new Device(new DeviceId(UUID.randomUUID()), UUID.randomUUID(), tableId, Surface.KIOSK, NOW);
+        return new Device(new DeviceId(UUID.randomUUID()), UUID.randomUUID(), UUID.randomUUID(), tableId, Surface.KIOSK, NOW);
     }
 
     @Test
@@ -88,7 +88,7 @@ class DevicePersistenceAdaptersTest {
 
     @Test
     void savesAPairingCodeAndItsUse() {
-        PairingCode code = PairingCode.issue("K7F2QX", UUID.randomUUID(), UUID.randomUUID(), Surface.KIOSK, NOW);
+        PairingCode code = PairingCode.issue("K7F2QX", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), Surface.KIOSK, NOW);
         codes.save(code);
         flushAndClear();
         assertThat(codes.findByValueForUpdate("K7F2QX")).contains(code);
@@ -109,10 +109,10 @@ class DevicePersistenceAdaptersTest {
     @Test
     void theSameCodeIsReplacedWhenItIsGivenAgain() {
         UUID venue = UUID.randomUUID();
-        codes.save(PairingCode.issue("AAAAAA", venue, UUID.randomUUID(), Surface.KIOSK, NOW).used(NOW));
+        codes.save(PairingCode.issue("AAAAAA", venue, UUID.randomUUID(), UUID.randomUUID(), Surface.KIOSK, NOW).used(NOW));
         flushAndClear();
 
-        PairingCode again = PairingCode.issue("AAAAAA", venue, UUID.randomUUID(), Surface.KIOSK, NOW.plusSeconds(3600));
+        PairingCode again = PairingCode.issue("AAAAAA", venue, UUID.randomUUID(), UUID.randomUUID(), Surface.KIOSK, NOW.plusSeconds(3600));
         codes.save(again);
         flushAndClear();
 

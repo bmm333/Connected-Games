@@ -15,7 +15,6 @@ import com.connectedgames.identity.domain.session.SessionKind;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 public final class PairDeviceService implements PairDeviceUseCase {
@@ -48,7 +47,7 @@ public final class PairDeviceService implements PairDeviceUseCase {
             devices.delete(previous.id());
         });
 
-        Device device = new Device(new DeviceId(UUID.randomUUID()), code.venueId(), code.tableId(),
+        Device device = new Device(new DeviceId(UUID.randomUUID()), code.venueId(), code.organizationId(), code.tableId(),
                 code.surface(), now);
         devices.save(device);
 
@@ -56,6 +55,6 @@ public final class PairDeviceService implements PairDeviceUseCase {
                 device.id().value(), now);
         sessions.save(session);
 
-        return new DeviceSession(device, tokens.issue(session, List.of(), now));
+        return new DeviceSession(device, tokens.issueForDevice(session, device, now));
     }
 }

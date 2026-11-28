@@ -20,6 +20,7 @@ class DeviceEntity {
     @Id
     private UUID id;
     private UUID venueId;
+    private UUID organizationId;
     private UUID tableId;
     @Enumerated(EnumType.STRING)
     private Surface surface;
@@ -33,6 +34,7 @@ class DeviceEntity {
         DeviceEntity row = new DeviceEntity();
         row.id = device.id().value();
         row.venueId = device.venueId();
+        row.organizationId = device.organizationId();
         row.tableId = device.tableId();
         row.surface = device.surface();
         row.pairedAt = device.pairedAt();
@@ -40,6 +42,6 @@ class DeviceEntity {
     }
 
     Device toDomain() {
-        return new Device(new DeviceId(id), venueId, tableId, surface, pairedAt);
+        return new Device(new DeviceId(id), venueId, organizationId, tableId, surface, pairedAt);
     }
 }

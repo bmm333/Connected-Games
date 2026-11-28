@@ -99,6 +99,28 @@ class UserTest {
     }
 
     @Test
+    void theOrganizationIsTheOneOfTheVenueManaged() {
+        UUID belvedere = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        UUID acme = UUID.randomUUID();
+        UUID globex = UUID.randomUUID();
+        User manager = userWith("Mario", List.of(PLAYER, RoleAssignment.venueManager(belvedere, acme),
+                RoleAssignment.venueManager(other, globex)));
+
+        assertThat(manager.organizationOf(belvedere)).contains(acme);
+        assertThat(manager.organizationOf(other)).contains(globex);
+        assertThat(manager.organizationOf(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void aPlayerOrAnAdminHasNoOrganization() {
+        UUID venue = UUID.randomUUID();
+
+        assertThat(userWith("Mario", List.of(PLAYER)).organizationOf(venue)).isEmpty();
+        assertThat(userWith("Admin", List.of(RoleAssignment.of(Role.PLATFORM_ADMIN))).organizationOf(venue)).isEmpty();
+    }
+
+    @Test
     void aPlayerOrAnAdminManagesNoVenue() {
         UUID venue = UUID.randomUUID();
 

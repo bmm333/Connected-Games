@@ -20,6 +20,7 @@ class CreatePairingCodeServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-11-18T20:00:00Z");
     private static final UUID VENUE = UUID.randomUUID();
+    private static final UUID ORGANIZATION = UUID.randomUUID();
     private static final UUID TABLE = UUID.randomUUID();
 
     private final TestClock clock = new TestClock(NOW);
@@ -27,7 +28,7 @@ class CreatePairingCodeServiceTest {
     private final InMemoryPairingCodeRepository codes = new InMemoryPairingCodeRepository();
 
     private final User manager = user("gestore@example.com", "secret123",
-            List.of(RoleAssignment.of(Role.PLAYER), RoleAssignment.venueManager(VENUE, UUID.randomUUID())));
+            List.of(RoleAssignment.of(Role.PLAYER), RoleAssignment.venueManager(VENUE, ORGANIZATION)));
 
     private CreatePairingCodeService service(String... generated) {
         users.save(manager);
@@ -40,10 +41,26 @@ class CreatePairingCodeServiceTest {
 
         assertThat(code.value()).isEqualTo("K7F2QX");
         assertThat(code.venueId()).isEqualTo(VENUE);
+        assertThat(code.organizationId()).isEqualTo(ORGANIZATION);
         assertThat(code.tableId()).isEqualTo(TABLE);
         assertThat(code.surface()).isEqualTo(Surface.KIOSK);
         assertThat(code.expiresAt()).isEqualTo(NOW.plus(Duration.ofMinutes(10)));
         assertThat(codes.findByValueForUpdate("K7F2QX")).contains(code);
+    }
+
+    @Test
+    void theOrganizationIsTheOneOfTheVenueThatTheManagerManages() {
+        UUID otherVenue = UUID.randomUUID();
+        UUID otherOrganization = UUID.randomUUID();
+        User twoVenues = user("due@example.com", "secret123", List.of(
+                RoleAssignment.venueManager(VENUE, ORGANIZATION), RoleAssignment.venueManager(otherVenue, otherOrganization)));
+        users.save(twoVenues);
+        CreatePairingCodeService service = service("K7F2QX", "AAAAAA");
+
+        assertThat(service.createPairingCode(twoVenues.id(), VENUE, TABLE, Surface.KIOSK).organizationId())
+                .isEqualTo(ORGANIZATION);
+        assertThat(service.createPairingCode(twoVenues.id(), otherVenue, TABLE, Surface.KIOSK).organizationId())
+                .isEqualTo(otherOrganization);
     }
 
     @Test

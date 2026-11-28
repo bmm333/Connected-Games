@@ -19,6 +19,7 @@ class PairingCodeEntity {
     @Id
     private String code;
     private UUID venueId;
+    private UUID organizationId;
     private UUID tableId;
     @Enumerated(EnumType.STRING)
     private Surface surface;
@@ -33,6 +34,7 @@ class PairingCodeEntity {
         PairingCodeEntity row = new PairingCodeEntity();
         row.code = pairingCode.value();
         row.venueId = pairingCode.venueId();
+        row.organizationId = pairingCode.organizationId();
         row.tableId = pairingCode.tableId();
         row.surface = pairingCode.surface();
         row.expiresAt = pairingCode.expiresAt();
@@ -41,6 +43,6 @@ class PairingCodeEntity {
     }
 
     PairingCode toDomain() {
-        return new PairingCode(code, venueId, tableId, surface, expiresAt, usedAt);
+        return new PairingCode(code, venueId, organizationId, tableId, surface, expiresAt, usedAt);
     }
 }
