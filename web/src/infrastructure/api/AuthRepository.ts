@@ -74,6 +74,7 @@ async function postJson(
 
 export function createAuthRepository(
   baseUrl = import.meta.env.VITE_AUTH_API_URL ?? '/api/auth',
+  identityBaseUrl = import.meta.env.VITE_IDENTITY_API_URL ?? '/api/identity',
 ): DomainAuthRepository {
   return {
     async authenticateWithQrCode(payload) {
@@ -83,6 +84,11 @@ export function createAuthRepository(
       return mapSession(
         await postJson(`${baseUrl}/devices/pair`, { code, credentials }),
       )
+    },
+    async refreshToken(refreshToken) {
+      return mapSession(
+        await postJson(`${identityBaseUrl}/sessions/refresh`, { refreshToken }),
+      ).token
     },
   }
 }

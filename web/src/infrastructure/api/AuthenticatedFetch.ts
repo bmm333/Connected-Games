@@ -1,35 +1,58 @@
-import type { AuthConsoleRepository } from '@domain/console/auth/AuthConsoleRepository'
-import type { ConsoleSessionStore } from '@domain/console/auth/ConsoleSessionStore'
+export interface AuthenticatedToken {
+  readonly accessToken: string
+  readonly refreshToken?: string
+}
 
-export function createAuthenticatedFetch(
-  repository: AuthConsoleRepository,
-  sessionStore: ConsoleSessionStore,
-  onUnauthorized: () => void,
+export interface AuthenticatedSession {
+  readonly token: AuthenticatedToken
+}
+
+export interface AuthenticatedFetchOptions<TSession extends AuthenticatedSession> {
+  readonly getSession: () => Promise<TSession | undefined>
+  readonly refreshToken?: (refreshToken: string) => Promise<AuthenticatedToken>
+  readonly saveSession?: (session: TSession) => Promise<void>
+  readonly onUnauthorized: () => void
+  readonly fetcher?: typeof fetch
+}
+
+export function createAuthenticatedFetch<TSession extends AuthenticatedSession>(
+  options: AuthenticatedFetchOptions<TSession>,
 ): typeof fetch {
+  const fetcher = options.fetcher ?? fetch
   return async (input, init) => {
-    const session = await sessionStore.get()
+    const session = await options.getSession()
     const headers = new Headers(init?.headers)
     if (session?.token.accessToken !== undefined) {
       headers.set('Authorization', `Bearer ${session.token.accessToken}`)
     }
 
-    let response = await fetch(input, { ...init, headers })
-    if (response.status !== 401 || session?.token.refreshToken === undefined) {
-      if (response.status === 401 || response.status === 403) onUnauthorized()
+    let response = await fetcher(input, { ...init, headers })
+    if (
+      response.status !== 401 ||
+      session?.token.refreshToken === undefined ||
+      options.refreshToken === undefined ||
+      options.saveSession === undefined
+    ) {
+      if (response.status === 401 || response.status === 403) options.onUnauthorized()
       return response
     }
 
-    let refreshed
+    let token: AuthenticatedToken
     try {
-      refreshed = await repository.refreshToken(session.token.refreshToken)
+      token = await options.refreshToken(session.token.refreshToken)
     } catch (error) {
-      onUnauthorized()
+      options.onUnauthorized()
       throw error
     }
-    await sessionStore.save(refreshed, true)
-    headers.set('Authorization', `Bearer ${refreshed.token.accessToken}`)
-    response = await fetch(input, { ...init, headers })
-    if (response.status === 401 || response.status === 403) onUnauthorized()
+    const refreshed = {
+      ...session,
+      token: { ...session.token, ...token },
+    } as TSession
+    await options.saveSession(refreshed)
+    const retryHeaders = new Headers(headers)
+    retryHeaders.set('Authorization', `Bearer ${token.accessToken}`)
+    response = await fetcher(input, { ...init, headers: retryHeaders })
+    if (response.status === 401 || response.status === 403) options.onUnauthorized()
     return response
   }
 }

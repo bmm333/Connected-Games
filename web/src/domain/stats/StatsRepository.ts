@@ -40,8 +40,82 @@ export interface VenueStatsSummary {
   readonly byGameType: readonly VenueGameTypeSummary[]
 }
 
+export interface StatsFilters {
+  readonly venueId?: string
+  readonly gameTypeId?: string
+  readonly from?: string
+  readonly to?: string
+}
+
+export interface StatsPagination {
+  readonly limit?: number
+  readonly offset?: number
+}
+
+export interface ParticipantMatch {
+  readonly matchId: string
+  readonly venueId: string
+  readonly tableId: string
+  readonly gameTypeId: string
+  readonly tournamentMatchId?: string
+  readonly endedAt: string
+  readonly durationSeconds: number
+  readonly side: 'RED' | 'BLUE'
+  readonly result: 'WIN' | 'LOSS' | 'DRAW'
+  readonly pointsFor: number
+  readonly pointsAgainst: number
+  readonly opponentParticipantId?: string
+  readonly opponentDisplayName?: string
+}
+
+export interface MatchResult {
+  readonly matchId: string
+  readonly venueId: string
+  readonly tableId: string
+  readonly gameTypeId: string
+  readonly tournamentMatchId?: string
+  readonly mode: 'INDIVIDUAL' | 'TEAM'
+  readonly pointsToWin: number
+  readonly reason: 'SCORE_REACHED' | 'TIME_EXPIRED'
+  readonly winnerSide?: 'RED' | 'BLUE'
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly durationSeconds: number
+  readonly sides: readonly {
+    readonly side: 'RED' | 'BLUE'
+    readonly participantId?: string
+    readonly displayName?: string
+    readonly score: number
+  }[]
+  readonly points: readonly {
+    readonly seq: number
+    readonly side: 'RED' | 'BLUE'
+    readonly occurredAt: string
+    readonly redScore: number
+    readonly blueScore: number
+  }[]
+  readonly leadChanges: number
+  readonly longestStreak?: {
+    readonly side: 'RED' | 'BLUE'
+    readonly length: number
+  }
+}
+
 export interface StatsRepository {
-  getLeaderboard(params?: { venueId?: string; limit?: number }): Promise<readonly LeaderboardEntry[]>
-  getParticipantSummary(participantId: string): Promise<ParticipantSummary | undefined>
-  getVenueSummary(venueId: string): Promise<VenueStatsSummary | undefined>
+  getLeaderboard(
+    params?: StatsFilters & Pick<StatsPagination, 'limit'>,
+  ): Promise<readonly LeaderboardEntry[]>
+  getParticipantSummary(
+    participantId: string,
+    params?: StatsFilters,
+  ): Promise<ParticipantSummary | undefined>
+  getParticipantMatches(
+    participantId: string,
+    params?: StatsFilters & StatsPagination,
+  ): Promise<readonly ParticipantMatch[]>
+  getMatchResult(matchId: string): Promise<MatchResult | undefined>
+  getVenueSummary(
+    venueId: string,
+    params?: Omit<StatsFilters, 'venueId'>,
+  ): Promise<VenueStatsSummary | undefined>
 }

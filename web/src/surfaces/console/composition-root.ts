@@ -24,6 +24,7 @@ import { createValidateRouteAccessUseCase } from '@use-cases/console-auth/Valida
 import type { UserSession } from '@domain/console/auth/UserSession'
 import { createMatchSimulatorUseCase } from '@use-cases/simulator/MatchSimulatorUseCase'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
+import { createAuthenticatedFetch } from '@infrastructure/api/AuthenticatedFetch'
 import type { SimulatorCatalogRepository } from '@domain/catalog/CatalogRepository'
 import type { MatchRestClient } from '@domain/simulator'
 import type { StatsRepository } from '@domain/stats/StatsRepository'
@@ -62,7 +63,16 @@ export function createConsoleDependencies(): ConsoleDependencies {
     createHttpConsoleAuthApiClient(),
     consoleSessionStore,
   )
-  const communication = createCommunicationServices()
+  const communication = createCommunicationServices(undefined, createAuthenticatedFetch({
+    getSession: () => consoleSessionStore.get(),
+    async refreshToken(refreshToken) {
+      return (await consoleAuthRepository.refreshToken(refreshToken)).token
+    },
+    saveSession: (session) => consoleSessionStore.save(session, true),
+    onUnauthorized() {
+      void consoleSessionStore.clear()
+    },
+  }))
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),

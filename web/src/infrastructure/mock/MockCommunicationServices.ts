@@ -257,6 +257,12 @@ function createMockStats(): StatsRepository {
     async getParticipantSummary() {
       return undefined
     },
+    async getParticipantMatches() {
+      return []
+    },
+    async getMatchResult() {
+      return undefined
+    },
     async getVenueSummary() {
       return undefined
     },

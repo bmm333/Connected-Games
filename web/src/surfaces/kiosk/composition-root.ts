@@ -6,6 +6,7 @@ import {
 } from '@use-cases/storage/CreateKeyValueStoreUseCases'
 import { createAuthDependencies } from '@surfaces/shared/auth-dependencies'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
+import { createSessionAuthenticatedFetch } from '@infrastructure/communication/createSessionAuthenticatedFetch'
 import type { MatchRestClient, MatchSseClient } from '@domain/simulator'
 import type { StatsRepository } from '@domain/stats/StatsRepository'
 
@@ -21,7 +22,10 @@ export interface KioskDependencies {
 
 export function createKioskDependencies(): KioskDependencies {
   const platformStore = createPlatformKeyValueStore()
-  const communication = createCommunicationServices()
+  const communication = createCommunicationServices(
+    undefined,
+    createSessionAuthenticatedFetch(platformStore),
+  )
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),

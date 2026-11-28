@@ -15,6 +15,7 @@ describe('createAuthenticateWithQrCode', () => {
     const authRepository: AuthRepository = {
       authenticateWithQrCode: vi.fn().mockResolvedValue(session),
       pairDevice: vi.fn(),
+      refreshToken: vi.fn(),
     }
     const sessionRepository: SessionRepository = {
       getStoredSession: vi.fn(),
@@ -38,6 +39,7 @@ describe('createAuthenticateWithQrCode', () => {
     const authRepository: AuthRepository = {
       authenticateWithQrCode: vi.fn(),
       pairDevice: vi.fn(),
+      refreshToken: vi.fn(),
     }
     const sessionRepository: SessionRepository = {
       getStoredSession: vi.fn(),

@@ -93,8 +93,12 @@ Il servizio Match non pre-semina partite attive.
   server Vite quando si eseguono i servizi Spring locali senza gateway.
 
 Le richieste REST hanno timeout e un retry limitato per errori di rete, HTTP 5xx
-e 429. EventSource usa la riconnessione nativa del browser e ne espone lo stato;
-MQTT usa QoS/topic definiti dai contratti e segnala errori di connessione.
+e 429. Match REST e Stats inviano il bearer token della sessione attiva; in caso
+di 401 tentano il refresh con rotazione del refresh token e ritentano la richiesta.
+Lo stream Match usa `fetch` con `Authorization` e riconnessione applicativa, così
+anche SSE funziona con gli endpoint protetti. Stats implementa leaderboard,
+riepilogo partecipante, partite del partecipante, risultato partita e riepilogo
+venue. MQTT usa QoS/topic definiti dai contratti e segnala errori di connessione.
 Payload non validi vengono scartati e registrati in console.
 
 ## Test e build

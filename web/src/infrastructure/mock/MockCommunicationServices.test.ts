@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { CommunicationServices, MatchEventEnvelope } from '@domain/simulator'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
 import { communicationRoutes } from '@shared/communication/config'
@@ -18,7 +18,7 @@ describe('communication service implementations', () => {
       apiBaseUrl: 'https://api.example.test',
       sseUrl: 'https://stream.example.test',
       mqttUrl: 'wss://broker.example.test/mqtt',
-    })
+    }, vi.fn<typeof fetch>())
 
     for (const services of [mock, real]) {
       expect(services.catalog.resolveTableByCode).toBeTypeOf('function')
@@ -27,6 +27,13 @@ describe('communication service implementations', () => {
       expect(services.matchEvents.publish).toBeTypeOf('function')
       expect(services.matchEvents.subscribeMatchCompleted).toBeTypeOf('function')
     }
+  })
+
+  it('requires an authenticated fetch implementation in real mode', () => {
+    expect(() => createCommunicationServices({
+      useMocks: false,
+      apiBaseUrl: '',
+    })).toThrow('authenticated fetch')
   })
 
   it('shares mock MQTT match events with the mock Match stream and completion subscribers', async () => {

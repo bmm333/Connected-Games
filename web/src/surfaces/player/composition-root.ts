@@ -1,6 +1,7 @@
 import { createPlatformKeyValueStore } from '@infrastructure/storage/PlatformKeyValueStore'
 import { createPlatformQueryPersister } from '@infrastructure/storage/PlatformQueryPersister'
 import { createCommunicationServices } from '@infrastructure/communication/createCommunicationServices'
+import { createSessionAuthenticatedFetch } from '@infrastructure/communication/createSessionAuthenticatedFetch'
 import {
   createKeyValueStoreUseCases,
   type KeyValueStoreUseCases,
@@ -28,8 +29,11 @@ export interface PlayerDependencies {
 }
 
 export function createPlayerDependencies(): PlayerDependencies {
-  const communication = createCommunicationServices()
   const platformStore = createPlatformKeyValueStore()
+  const communication = createCommunicationServices(
+    undefined,
+    createSessionAuthenticatedFetch(platformStore),
+  )
 
   return {
     storage: createKeyValueStoreUseCases(platformStore),

@@ -16,8 +16,12 @@ import type { CommunicationServices } from '@domain/simulator'
 
 export function createCommunicationServices(
   config: CommunicationConfig = communicationConfig,
+  authenticatedFetch?: typeof fetch,
 ): CommunicationServices {
   if (config.useMocks) return createMockCommunicationServices()
+  if (!authenticatedFetch) {
+    throw new Error('An authenticated fetch implementation is required in real mode')
+  }
 
   const mqttUrl = config.mqttUrl
   const mqttClient = createMqttClientService()
@@ -31,11 +35,12 @@ export function createCommunicationServices(
       apiUrl(config.apiBaseUrl, communicationRoutes.catalog),
     ),
     matches: {
-      ...createMatchRestClient(config.apiBaseUrl),
-      ...createMatchSseClient(config.sseUrl ?? config.apiBaseUrl),
+      ...createMatchRestClient(config.apiBaseUrl, authenticatedFetch),
+      ...createMatchSseClient(config.sseUrl ?? config.apiBaseUrl, authenticatedFetch),
     },
     stats: createStatsRepository(
       apiUrl(config.apiBaseUrl, communicationRoutes.stats),
+      authenticatedFetch,
     ),
     matchEvents: mqttUrl
       ? matchEvents
