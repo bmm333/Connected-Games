@@ -128,4 +128,84 @@ class TournamentMatchTest {
         assertThatNullPointerException().isThrownBy(
                 () -> new TournamentMatch(null, 1, 0, false, null, null, null, null, null));
     }
+
+    @Test
+    void withAnOutcomeTheMatchIsCompletedAndTheOriginalIsUntouched() {
+        TournamentMatch open = match(ADA, BRUNO, null);
+        Outcome outcome = played(Side.BLUE, 2, 5);
+
+        TournamentMatch done = open.withOutcome(outcome);
+
+        assertThat(done.outcome()).isEqualTo(outcome);
+        assertThat(done.id()).isEqualTo(open.id());
+        assertThat(done.red()).isEqualTo(ADA);
+        assertThat(done.blue()).isEqualTo(BRUNO);
+        assertThat(open.outcome()).isNull();
+    }
+
+    @Test
+    void withAnOutcomeTheRulesOfTheMatchStillApply() {
+        TournamentMatch waiting = match(ADA, null, null);
+
+        assertThatIllegalArgumentException().isThrownBy(() -> waiting.withOutcome(played(Side.RED, 5, 1)));
+    }
+
+    @Test
+    void withAnEntrantOnTheRedSideOnlyTheRedSideChanges() {
+        TournamentMatch open = match(ADA, BRUNO, null);
+        Entrant carla = new Entrant(new ParticipantId("carla"), "Carla");
+
+        TournamentMatch changed = open.withEntrant(Side.RED, carla);
+
+        assertThat(changed.red()).isEqualTo(carla);
+        assertThat(changed.blue()).isEqualTo(BRUNO);
+        assertThat(open.red()).isEqualTo(ADA);
+    }
+
+    @Test
+    void withAnEntrantOnTheBlueSideOnlyTheBlueSideChanges() {
+        TournamentMatch open = match(ADA, BRUNO, null);
+        Entrant carla = new Entrant(new ParticipantId("carla"), "Carla");
+
+        TournamentMatch changed = open.withEntrant(Side.BLUE, carla);
+
+        assertThat(changed.red()).isEqualTo(ADA);
+        assertThat(changed.blue()).isEqualTo(carla);
+    }
+
+    @Test
+    void anEntrantCanFillAnEmptySideAndTheMatchBecomesReady() {
+        TournamentMatch waiting = match(ADA, null, null);
+
+        TournamentMatch ready = waiting.withEntrant(Side.BLUE, BRUNO);
+
+        assertThat(ready.status()).isEqualTo(TournamentMatchStatus.READY);
+    }
+
+    @Test
+    void withAnEntrantTheRulesOfTheMatchStillApply() {
+        TournamentMatch open = match(ADA, BRUNO, null);
+
+        assertThatIllegalArgumentException().isThrownBy(() -> open.withEntrant(Side.BLUE, ADA));
+    }
+
+    @Test
+    void theLinksAndTheSlotSurviveAChange() {
+        Advance next = new Advance(new TournamentMatchId(UUID.randomUUID()), Side.BLUE);
+        Advance consolation = new Advance(new TournamentMatchId(UUID.randomUUID()), Side.RED);
+        TournamentMatch original = new TournamentMatch(new TournamentMatchId(UUID.randomUUID()), 2, 3, false, ADA,
+                BRUNO, next, consolation, null);
+
+        TournamentMatch withOutcome = original.withOutcome(played(Side.RED, 5, 1));
+        TournamentMatch withEntrant = original.withEntrant(Side.RED, new Entrant(new ParticipantId("carla"), "Carla"));
+
+        for (TournamentMatch changed : new TournamentMatch[] {withOutcome, withEntrant}) {
+            assertThat(changed.id()).isEqualTo(original.id());
+            assertThat(changed.round()).isEqualTo(2);
+            assertThat(changed.slot()).isEqualTo(3);
+            assertThat(changed.thirdPlace()).isFalse();
+            assertThat(changed.winnerGoesTo()).isEqualTo(next);
+            assertThat(changed.loserGoesTo()).isEqualTo(consolation);
+        }
+    }
 }

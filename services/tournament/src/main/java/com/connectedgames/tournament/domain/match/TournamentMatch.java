@@ -56,4 +56,12 @@ public record TournamentMatch(TournamentMatchId id, int round, int slot, boolean
         }
         return entrantOn(outcome.winnerSide().opposite());
     }
+        public TournamentMatch withEntrant(Side side, Entrant entrant) {
+        return new TournamentMatch(id, round, slot, thirdPlace, side == Side.RED ? entrant : red,
+                side == Side.BLUE ? entrant : blue, winnerGoesTo, loserGoesTo, outcome);
+    }
+
+    public TournamentMatch withOutcome(Outcome newOutcome) {
+        return new TournamentMatch(id, round, slot, thirdPlace, red, blue, winnerGoesTo, loserGoesTo, newOutcome);
+    }
 }
